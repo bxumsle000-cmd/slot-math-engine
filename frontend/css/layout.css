@@ -1,0 +1,123 @@
+/* ============================================================
+   layout.css — 頁面佈局
+   ============================================================ */
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 頂部 Header（登入後顯示） ───────────────────────────────── */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--bg-elevated);
+}
+
+.app-header .logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--gold);
+  letter-spacing: 4px;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.app-header .user-info {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 14px;
+}
+
+.app-header .balance {
+  color: var(--gold);
+  font-weight: bold;
+  font-size: 18px;
+  padding: 6px 16px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--gold-dim);
+  border-radius: var(--radius-md);
+}
+
+.app-header .username {
+  color: var(--text-muted);
+}
+
+.app-header .nav-btn {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s;
+}
+
+.app-header .nav-btn:hover {
+  color: var(--neon-cyan);
+}
+
+.app-header .nav-btn.active {
+  color: var(--gold);
+}
+
+/* ── 主內容區域 ────────────────────────────────────────────────── */
+.app-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+/* ── 登入/註冊頁置中容器 ────────────────────────────────────────── */
+.auth-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-container .card {
+  padding: 40px;
+}
+
+.auth-container .title {
+  margin-bottom: 32px;
+}
+
+.auth-container .form-group {
+  margin-bottom: 20px;
+}
+
+.auth-container .form-group label {
+  display: block;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.auth-container .btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.auth-container .switch-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.auth-container .switch-link a {
+  color: var(--neon-cyan);
+  cursor: pointer;
+  text-decoration: none;
+  margin-left: 6px;
+}
+
+.auth-container .switch-link a:hover {
+  text-decoration: underline;
+}

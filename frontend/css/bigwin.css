@@ -1,0 +1,167 @@
+/* ============================================================
+   bigwin.css — Big Win 全螢幕演出
+   ============================================================ */
+
+/* ── 浮層容器（全螢幕半透明） ────────────────────────────────── */
+.bigwin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(ellipse at center,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.3) 70%);
+}
+
+.bigwin-overlay.visible {
+  opacity: 1;
+}
+
+/* ── 內容（標題 + 金額）───────────────────────────────────────── */
+.bigwin-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  transform: scale(0.3) rotate(-5deg);
+  transition: transform 0.6s cubic-bezier(0.34, 1.8, 0.64, 1);  /* 彈跳進場 */
+}
+
+.bigwin-overlay.visible .bigwin-content {
+  transform: scale(1) rotate(0);
+}
+
+.bigwin-title {
+  font-size: 120px;
+  font-weight: 900;
+  letter-spacing: 12px;
+  margin-bottom: 24px;
+  text-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.8),
+    0 0 30px rgba(255, 215, 0, 0.6);
+  animation: bigwin-title-shake 0.5s ease-in-out infinite;
+}
+
+@keyframes bigwin-title-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  25%      { transform: translate(-4px, 2px) rotate(-1deg); }
+  75%      { transform: translate(4px, -2px) rotate(1deg); }
+}
+
+.bigwin-amount {
+  font-size: 80px;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow:
+    0 0 20px rgba(255, 215, 0, 0.9),
+    0 0 40px rgba(255, 215, 0, 0.6);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 4px;
+}
+
+.bigwin-amount::before {
+  content: "💰 +";
+  margin-right: 8px;
+}
+
+/* ── 四種等級配色 ─────────────────────────────────────────────── */
+
+/* NICE WIN：紅色 */
+.bigwin-nice .bigwin-title {
+  color: var(--neon-red);
+  text-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.8),
+    0 0 30px rgba(255, 8, 68, 0.7);
+}
+
+/* BIG WIN：金色 */
+.bigwin-big .bigwin-title {
+  color: var(--gold);
+  text-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.8),
+    0 0 30px rgba(255, 215, 0, 0.8);
+}
+
+/* HUGE WIN：彩虹漸層 */
+.bigwin-huge .bigwin-title {
+  background: linear-gradient(45deg, #ff0844, #ffd700, #00e5ff, #ff4dc4);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: bigwin-title-shake 0.5s ease-in-out infinite,
+             bigwin-rainbow-shift 2s linear infinite;
+}
+
+@keyframes bigwin-rainbow-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* MEGA WIN：彩虹 + 加大 + 持續閃爍 */
+.bigwin-mega .bigwin-title {
+  font-size: 140px;
+  background: linear-gradient(45deg, #ff0844, #ffd700, #00e5ff, #ff4dc4, #ffd700);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: bigwin-mega-pulse 0.4s ease-in-out infinite alternate,
+             bigwin-rainbow-shift 1.5s linear infinite;
+}
+
+@keyframes bigwin-mega-pulse {
+  0%   { transform: scale(1) rotate(-1deg); filter: brightness(1.2); }
+  100% { transform: scale(1.08) rotate(1deg); filter: brightness(1.6); }
+}
+
+/* ── 粒子效果 ────────────────────────────────────────────────── */
+.bigwin-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bigwin-particle {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--color);
+  box-shadow: 0 0 12px var(--color);
+  opacity: 0;
+  animation: particle-explode 1.6s ease-out forwards;
+  animation-delay: var(--delay);
+}
+
+@keyframes particle-explode {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 1;
+  }
+  20% {
+    transform:
+      translate(
+        calc(cos(var(--angle)) * var(--distance) * 0.3),
+        calc(sin(var(--angle)) * var(--distance) * 0.3)
+      )
+      scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform:
+      translate(
+        calc(cos(var(--angle)) * var(--distance)),
+        calc(sin(var(--angle)) * var(--distance) + 200px)  /* +200px 模擬重力下墜 */
+      )
+      scale(0.3);
+    opacity: 0;
+  }
+}

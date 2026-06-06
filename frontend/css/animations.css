@@ -1,0 +1,205 @@
+/* ============================================================
+   animations.css — 動畫效果（FS 通知浮層、進場、發光等）
+   ============================================================ */
+
+/* ── FS 大型通知浮層（觸發 / Retrigger / 結束） ───────────────── */
+.fs-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  pointer-events: none;            /* 不擋住點擊 */
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(ellipse at center,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0) 70%);
+}
+
+.fs-overlay.visible {
+  opacity: 1;
+}
+
+.fs-overlay-title {
+  font-size: 96px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+  transform: scale(0.5);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);  /* 彈跳效果 */
+}
+
+.fs-overlay.visible .fs-overlay-title {
+  transform: scale(1);
+  animation: fs-title-pulse 1.2s ease-in-out infinite;
+}
+
+.fs-overlay-subtitle {
+  font-size: 32px;
+  color: white;
+  letter-spacing: 4px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s;
+}
+
+.fs-overlay.visible .fs-overlay-subtitle {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 三種 FS 事件用不同配色 ─────────────────────────────────────── */
+
+/* 首次觸發：金色光輝 */
+.fs-overlay--trigger .fs-overlay-title {
+  color: var(--gold);
+  text-shadow:
+    0 0 20px rgba(255, 215, 0, 0.9),
+    0 0 40px rgba(255, 215, 0, 0.6),
+    0 0 60px rgba(255, 215, 0, 0.3);
+}
+
+/* Retrigger：霓虹粉，更興奮 */
+.fs-overlay--retrigger .fs-overlay-title {
+  color: var(--neon-pink);
+  text-shadow:
+    0 0 20px rgba(255, 77, 196, 0.9),
+    0 0 40px rgba(255, 77, 196, 0.6),
+    0 0 60px rgba(255, 77, 196, 0.3);
+}
+
+/* FS 結束：暗金，沉穩告別 */
+.fs-overlay--end .fs-overlay-title {
+  color: var(--gold-dim);
+  text-shadow:
+    0 0 15px rgba(184, 134, 11, 0.6),
+    0 0 30px rgba(184, 134, 11, 0.3);
+}
+
+.fs-overlay--end .fs-overlay-title {
+  animation: none;     /* 結束狀態不脈動，較安靜 */
+}
+
+/* ── 標題脈動動畫 ────────────────────────────────────────────── */
+@keyframes fs-title-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: brightness(1.3);
+  }
+}
+
+/* ── 中獎格子發光動畫（金光脈動） ────────────────────────────── */
+.slot-cell.winning {
+  animation: cell-win-glow 0.6s ease-in-out infinite alternate;
+  border-color: var(--gold);
+  z-index: 2;
+}
+
+.slot-cell.winning::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle,
+    rgba(255, 215, 0, 0.4) 0%,
+    rgba(255, 215, 0, 0) 70%);
+  pointer-events: none;
+  animation: cell-win-shine 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes cell-win-glow {
+  0% {
+    box-shadow:
+      0 0 12px rgba(255, 215, 0, 0.6),
+      inset 0 0 8px rgba(255, 215, 0, 0.3);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow:
+      0 0 24px rgba(255, 215, 0, 0.9),
+      0 0 40px rgba(255, 215, 0, 0.5),
+      inset 0 0 16px rgba(255, 215, 0, 0.5);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes cell-win-shine {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.8; }
+}
+
+/* ── Scatter 隨機脈動（任何時候有 Scatter 都微微閃動） ──────── */
+.slot-cell[data-symbol="Scatter"] .symbol-scatter {
+  animation: scatter-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes scatter-shimmer {
+  0%, 100% {
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.8));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 24px rgba(255, 215, 0, 1));
+    transform: scale(1.1);
+  }
+}
+
+/* ── 贏分跳數動畫的輔助樣式 ─────────────────────────────────── */
+.control-group.win .value.counting {
+  text-shadow: 0 0 12px rgba(0, 255, 136, 0.7);
+  animation: win-bounce 0.3s ease-out;
+}
+
+@keyframes win-bounce {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* Big Win 等級的贏分（≥ 押注 10 倍）：紅金漸層 */
+.control-group.win .value.big-win {
+  background: linear-gradient(45deg, var(--neon-red), var(--gold), var(--neon-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: big-win-pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes big-win-pulse {
+  0% {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+    transform: scale(1);
+  }
+  100% {
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 1));
+    transform: scale(1.08);
+  }
+}
+
+/* ── 機台整體中獎光暈（有任何中獎時觸發） ──────────────────── */
+.slot-machine.winning {
+  animation: machine-win-glow 1.2s ease-in-out;
+}
+
+@keyframes machine-win-glow {
+  0%, 100% {
+    box-shadow:
+      inset 0 4px 20px rgba(0, 0, 0, 0.8),
+      0 0 40px rgba(255, 215, 0, 0.2);
+  }
+  50% {
+    box-shadow:
+      inset 0 4px 20px rgba(0, 0, 0, 0.8),
+      0 0 80px rgba(255, 215, 0, 0.7),
+      0 0 120px rgba(255, 215, 0, 0.3);
+  }
+}

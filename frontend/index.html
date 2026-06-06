@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>金幣老虎機 GOLD SLOT</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/slot.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/modal.css">
+  <link rel="stylesheet" href="css/bigwin.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ───────────────────────────────────────────────────────────
+         Header（登入後才顯示）
+         ─────────────────────────────────────────────────────────── -->
+    <header id="app-header" class="app-header hidden">
+      <div class="logo">⭐ GOLD SLOT ⭐</div>
+      <nav>
+        <button class="nav-btn" data-page="game">遊戲</button>
+        <button class="nav-btn" data-page="history">歷史</button>
+        <button class="nav-btn" data-page="deposit">儲值</button>
+      </nav>
+      <div class="user-info">
+        <span class="username" id="header-username">—</span>
+        <span class="balance" id="header-balance">💰 0</span>
+        <button class="nav-btn" id="btn-mute" title="靜音切換">🔊</button>
+        <button class="nav-btn" id="btn-logout">登出</button>
+      </div>
+    </header>
+
+    <!-- ───────────────────────────────────────────────────────────
+         主內容區（依登入狀態切換頁面）
+         ─────────────────────────────────────────────────────────── -->
+    <main class="app-main" id="app-main">
+
+      <!-- 登入頁 -->
+      <section id="page-login" class="auth-container hidden">
+        <div class="card">
+          <h1 class="title">GOLD SLOT</h1>
+          <p class="subtitle">登入以開始遊戲</p>
+
+          <div id="login-msg"></div>
+
+          <div class="form-group" style="margin-top: 24px;">
+            <label>帳號</label>
+            <input type="text" id="login-username" class="input" placeholder="輸入帳號" autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label>密碼</label>
+            <input type="password" id="login-password" class="input" placeholder="輸入密碼" autocomplete="current-password">
+          </div>
+
+          <button class="btn btn-primary" id="btn-login">登 入</button>
+
+          <p class="switch-link">
+            還沒有帳號？<a id="link-to-register">立即註冊</a>
+          </p>
+        </div>
+      </section>
+
+      <!-- 註冊頁 -->
+      <section id="page-register" class="auth-container hidden">
+        <div class="card">
+          <h1 class="title">註冊帳號</h1>
+          <p class="subtitle">新帳號預設贈送 1000 金幣</p>
+
+          <div id="register-msg"></div>
+
+          <div class="form-group" style="margin-top: 24px;">
+            <label>帳號（1-50 字元）</label>
+            <input type="text" id="register-username" class="input" placeholder="設定帳號">
+          </div>
+          <div class="form-group">
+            <label>密碼（至少 6 字元）</label>
+            <input type="password" id="register-password" class="input" placeholder="設定密碼">
+          </div>
+
+          <button class="btn btn-primary" id="btn-register">註 冊</button>
+
+          <p class="switch-link">
+            已有帳號？<a id="link-to-login">前往登入</a>
+          </p>
+        </div>
+      </section>
+
+      <!-- 遊戲主畫面 -->
+      <section id="page-game" class="hidden">
+        <div class="game-container">
+
+          <!-- Free Spin 狀態橫幅（剩餘 FS > 0 時顯示） -->
+          <div id="fs-banner" class="fs-banner hidden">
+            <div class="fs-banner-main">
+              <span id="fs-banner-title">🎰 FREE SPIN 進行中</span>
+              <span class="fs-count" id="fs-count">10</span>
+              局剩餘
+              <span class="fs-separator">｜</span>
+              <span class="fs-multiplier" id="fs-multiplier">3×</span>
+              優惠倍率
+            </div>
+            <div class="fs-banner-hint" id="fs-banner-hint">
+              出現 3 個 Scatter 可追加 10 局
+            </div>
+          </div>
+
+          <!-- 機台本體 -->
+          <div class="slot-machine">
+            <div class="slot-grid" id="slot-grid">
+              <!-- 15 個格子（3 行 × 5 軸），由 JS 動態填入 -->
+            </div>
+          </div>
+
+          <!-- 中獎/訊息列 -->
+          <div class="game-msg" id="game-msg">準備好就按 SPIN！</div>
+
+          <!-- 控制面板：上次贏分 / 押注調整 / SPIN 按鈕 -->
+          <div class="control-panel">
+            <div class="control-group win">
+              <span class="label">本局贏分</span>
+              <span class="value" id="last-win">0</span>
+            </div>
+
+            <div class="control-group">
+              <span class="label">押注金額</span>
+              <div class="bet-controls">
+                <button class="bet-btn" id="bet-minus">−</button>
+                <span class="bet-value" id="bet-value">10</span>
+                <button class="bet-btn" id="bet-plus">+</button>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-spin" id="btn-spin">SPIN</button>
+          </div>
+
+          <!-- 底部資訊列 -->
+          <div class="info-bar">
+            <span>5×3 多線老虎機・5 條付線・押滿線</span>
+            <a class="info-link" id="link-paytable">查看賠付表</a>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 歷史頁 -->
+      <section id="page-history" class="hidden">
+        <div class="page-container">
+          <h2 class="page-title">📜 旋轉歷史</h2>
+
+          <!-- 篩選列 -->
+          <div class="history-filters">
+            <label>從</label>
+            <input type="date" id="filter-from-date">
+            <label>到</label>
+            <input type="date" id="filter-to-date">
+            <button class="btn" id="btn-filter-apply">查詢</button>
+            <button class="btn btn-clear" id="btn-filter-clear">清除</button>
+          </div>
+
+          <!-- 表格 -->
+          <table class="history-table" id="history-table">
+            <thead>
+              <tr>
+                <th>時間</th>
+                <th>押注</th>
+                <th>結果</th>
+                <th>損益</th>
+                <th>結算後餘額</th>
+                <th>編號</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+
+          <!-- 空狀態 -->
+          <div class="history-empty hidden" id="history-empty">
+            <span class="emoji">🎰</span>
+            還沒有任何旋轉記錄<br>
+            <span style="font-size:13px;color:var(--text-dim);">去遊戲頁玩幾局再回來看吧</span>
+          </div>
+
+          <!-- 分頁 -->
+          <div class="pagination" id="history-pagination">
+            <button class="btn" id="btn-page-prev">← 上一頁</button>
+            <span class="page-info" id="page-info">1 / 1</span>
+            <button class="btn" id="btn-page-next">下一頁 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 儲值頁 -->
+      <section id="page-deposit" class="hidden">
+        <div class="deposit-container">
+          <h2 class="page-title">💰 儲值</h2>
+
+          <div class="deposit-balance">
+            <div class="label">當前餘額</div>
+            <div class="amount" id="deposit-balance-value">0</div>
+          </div>
+
+          <p style="color:var(--text-muted);font-size:14px;margin-bottom:12px;letter-spacing:1px;">快速選擇</p>
+          <div class="deposit-quick">
+            <button class="btn" data-amount="100">+100</button>
+            <button class="btn" data-amount="500">+500</button>
+            <button class="btn" data-amount="1000">+1,000</button>
+            <button class="btn" data-amount="5000">+5,000</button>
+          </div>
+
+          <div class="deposit-custom">
+            <label>自訂金額</label>
+            <input
+              type="number"
+              id="deposit-custom-amount"
+              class="input"
+              placeholder="輸入金額"
+              min="1"
+              step="1"
+            >
+          </div>
+
+          <div id="deposit-msg"></div>
+
+          <button class="btn btn-primary deposit-submit" id="btn-deposit">確 認 儲 值</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 程式碼 -->
+  <script src="js/api.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/bigwin.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/deposit.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

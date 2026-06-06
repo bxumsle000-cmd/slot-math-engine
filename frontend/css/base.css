@@ -1,0 +1,200 @@
+/* ============================================================
+   base.css — 全域樣式、CSS 變數、共用元件
+   ============================================================ */
+
+:root {
+  /* ── 配色：賭場風（深紫黑 + 金色 + 霓虹紅） ────────────────── */
+  --bg-primary:   #0a0a18;          /* 最深背景：墨夜紫 */
+  --bg-secondary: #14142b;          /* 次層背景 */
+  --bg-card:      #1d1d3d;          /* 卡片背景 */
+  --bg-elevated:  #2a2a5a;          /* 浮起元件 */
+
+  --gold:         #ffd700;          /* 主金色：標題、邊框、贏分 */
+  --gold-dim:     #b8860b;          /* 暗金：次標題、icon */
+  --gold-glow:    #ffef9a;          /* 金色光暈 */
+
+  --neon-red:     #ff0844;          /* 霓虹紅：SPIN 按鈕、警示 */
+  --neon-pink:    #ff4dc4;          /* 霓虹粉：強調 */
+  --neon-cyan:    #00e5ff;          /* 霓虹青：副資訊 */
+  --neon-green:   #00ff88;          /* 霓虹綠：贏錢 */
+
+  --text-primary: #f0f0ff;          /* 主文字：近白 */
+  --text-muted:   #9090c0;          /* 次文字：紫灰 */
+  --text-dim:     #5a5a8a;          /* 暗文字 */
+
+  --danger:       #ff3366;          /* 紅色錯誤 */
+  --success:      #00ff88;          /* 綠色成功 */
+
+  /* ── 尺寸 ─────────────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow-gold: 0 0 20px rgba(255, 215, 0, 0.4);
+  --shadow-glow-red:  0 0 30px rgba(255, 8, 68, 0.5);
+}
+
+/* ── 重設 ─────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* 背景紋理：細微的星空感，營造賭場深夜氛圍 */
+body {
+  background:
+    radial-gradient(ellipse at top, var(--bg-secondary) 0%, var(--bg-primary) 70%),
+    var(--bg-primary);
+  min-height: 100vh;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input {
+  font-family: inherit;
+}
+
+/* ── 通用元件 ────────────────────────────────────────────────── */
+
+/* 主按鈕：金色邊框、深色填充、hover 時發光 */
+.btn {
+  padding: 12px 32px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 2px solid var(--gold-dim);
+}
+
+.btn:hover {
+  background: var(--bg-card);
+  border-color: var(--gold);
+  box-shadow: var(--shadow-glow-gold);
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 主要動作按鈕（SPIN）：霓虹紅、強烈發光 */
+.btn-primary {
+  background: linear-gradient(135deg, var(--neon-red), #c70036);
+  border: 2px solid var(--neon-pink);
+  color: white;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-glow-red);
+  font-size: 20px;
+  padding: 16px 48px;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 40px rgba(255, 8, 68, 0.8);
+  transform: translateY(-3px);
+}
+
+/* 次要按鈕：透明邊框 */
+.btn-ghost {
+  background: transparent;
+  border: 2px solid var(--text-dim);
+  color: var(--text-muted);
+}
+
+.btn-ghost:hover {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+}
+
+/* 輸入框：暗色、金色邊框 */
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 2px solid var(--bg-elevated);
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+  outline: none;
+}
+
+/* 卡片容器 */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-card);
+}
+
+/* 標題：金色發光 */
+.title {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  text-align: center;
+  letter-spacing: 3px;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* 錯誤/成功訊息 */
+.msg-error {
+  color: var(--danger);
+  padding: 12px;
+  background: rgba(255, 51, 102, 0.1);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  margin: 12px 0;
+}
+
+.msg-success {
+  color: var(--success);
+  padding: 12px;
+  background: rgba(0, 255, 136, 0.1);
+  border-left: 3px solid var(--success);
+  border-radius: var(--radius-sm);
+  margin: 12px 0;
+}
+
+/* 隱藏元素 */
+.hidden {
+  display: none !important;
+}

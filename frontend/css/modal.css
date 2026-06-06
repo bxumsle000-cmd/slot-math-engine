@@ -1,0 +1,207 @@
+/* ============================================================
+   modal.css — 賠付表 / 通用彈窗
+   ============================================================ */
+
+/* ── 半透明遮罩背景 ────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.modal-backdrop.visible {
+  opacity: 1;
+}
+
+/* ── 彈窗主體 ──────────────────────────────────────────────── */
+.modal-box {
+  background: var(--bg-card);
+  border: 2px solid var(--gold-dim);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+  transform: scale(0.85) translateY(20px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.modal-backdrop.visible .modal-box {
+  transform: scale(1) translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--bg-elevated);
+}
+
+.modal-header h2 {
+  color: var(--gold);
+  font-size: 22px;
+  letter-spacing: 2px;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.modal-body {
+  padding: 20px 28px 28px;
+  overflow-y: auto;          /* 內容過長可滾動 */
+}
+
+.modal-section {
+  margin-bottom: 28px;
+}
+
+.modal-section h3 {
+  color: var(--gold-dim);
+  font-size: 16px;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--bg-elevated);
+}
+
+.modal-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.modal-list {
+  list-style: none;
+  padding: 0;
+}
+
+.modal-list li {
+  padding: 8px 0 8px 24px;
+  font-size: 14px;
+  color: var(--text-primary);
+  position: relative;
+}
+
+.modal-list li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+}
+
+.modal-list strong {
+  color: var(--gold);
+}
+
+/* ── 賠付表（modal 內）─────────────────────────────────────── */
+.paytable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--bg-elevated);
+}
+
+.paytable th,
+.paytable td {
+  padding: 10px 14px;
+  text-align: center;
+  border-bottom: 1px solid var(--bg-elevated);
+}
+
+.paytable th {
+  background: var(--bg-secondary);
+  color: var(--gold-dim);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.paytable td {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+}
+
+.paytable .paytable-symbol {
+  width: 80px;
+  font-size: 32px;
+  height: 60px;
+  line-height: 1;
+  /* 確保符號的 .symbol span 在這格內居中 */
+}
+
+.paytable .paytable-symbol .symbol,
+.paytable .paytable-symbol .symbol-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 付線視覺化 mini grid ─────────────────────────────────── */
+.payline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.payline-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-elevated);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.payline-name {
+  font-size: 13px;
+  color: var(--gold-dim);
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 3px;
+  aspect-ratio: 5 / 3;
+}
+
+.mini-cell {
+  background: var(--bg-primary);
+  border: 1px solid var(--bg-elevated);
+  border-radius: 3px;
+}
+
+.mini-cell.on {
+  background: linear-gradient(135deg, var(--gold), var(--neon-red));
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+}

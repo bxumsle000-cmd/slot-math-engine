@@ -1,0 +1,245 @@
+/* ============================================================
+   pages.css — 歷史 / 儲值頁專屬樣式
+   ============================================================ */
+
+/* ── 通用：頁面容器（歷史與儲值共用） ──────────────────────── */
+.page-container {
+  width: 100%;
+  max-width: 900px;
+}
+
+.page-container .page-title {
+  font-size: 28px;
+  color: var(--gold);
+  text-shadow: 0 0 16px rgba(255, 215, 0, 0.4);
+  letter-spacing: 4px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+/* ── 歷史頁：篩選列 ────────────────────────────────────────── */
+.history-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-elevated);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.history-filters label {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.history-filters input[type="date"] {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color-scheme: dark;             /* 暗色主題的日期選擇器 */
+}
+
+.history-filters input[type="date"]:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.history-filters .btn {
+  padding: 8px 20px;
+  font-size: 14px;
+}
+
+.history-filters .btn-clear {
+  background: transparent;
+  border-color: var(--text-dim);
+  color: var(--text-muted);
+}
+
+/* ── 歷史頁：旋轉記錄表格 ──────────────────────────────────── */
+.history-table {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-elevated);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border-collapse: collapse;
+}
+
+.history-table thead th {
+  background: var(--bg-secondary);
+  color: var(--gold-dim);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 2px solid var(--bg-elevated);
+}
+
+.history-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 14px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.history-table tbody tr:hover {
+  background: rgba(255, 215, 0, 0.04);
+}
+
+.history-table .net-positive {
+  color: var(--neon-green);
+  font-weight: bold;
+}
+
+.history-table .net-negative {
+  color: var(--danger);
+}
+
+.history-table .net-zero {
+  color: var(--text-muted);
+}
+
+.history-table .result-cell {
+  color: var(--text-muted);
+  font-size: 13px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-table .result-win {
+  color: var(--gold);
+}
+
+/* FS 免費局徽章：標記押注未實際扣款 */
+.history-table .fs-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--bg, #14101f);
+  background: var(--gold);
+  vertical-align: middle;
+}
+
+/* 空狀態 */
+.history-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  font-size: 16px;
+  background: var(--bg-card);
+  border: 1px dashed var(--bg-elevated);
+  border-radius: var(--radius-md);
+}
+
+.history-empty .emoji {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* ── 歷史頁：分頁控制 ──────────────────────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.pagination .page-info {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+.pagination .btn {
+  padding: 8px 20px;
+  font-size: 14px;
+}
+
+/* ── 儲值頁 ────────────────────────────────────────────────── */
+.deposit-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.deposit-balance {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg,
+    rgba(255, 215, 0, 0.08),
+    rgba(255, 8, 68, 0.05));
+  border: 2px solid var(--gold-dim);
+  border-radius: var(--radius-lg);
+}
+
+.deposit-balance .label {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+
+.deposit-balance .amount {
+  font-size: 48px;
+  font-weight: bold;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+}
+
+.deposit-quick {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.deposit-quick .btn {
+  padding: 16px 0;
+  font-size: 16px;
+}
+
+.deposit-quick .btn.active {
+  background: linear-gradient(135deg, var(--neon-red), #c70036);
+  border-color: var(--neon-pink);
+  color: white;
+  box-shadow: 0 0 20px rgba(255, 8, 68, 0.4);
+}
+
+.deposit-custom {
+  margin-bottom: 24px;
+}
+
+.deposit-custom label {
+  display: block;
+  font-size: 14px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.deposit-submit {
+  width: 100%;
+  font-size: 20px;
+  letter-spacing: 4px;
+}
