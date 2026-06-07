@@ -121,3 +121,18 @@
 .auth-container .switch-link a:hover {
   text-decoration: underline;
 }
+
+/* Google 登入按鈕容器：置中顯示 GIS 渲染出的按鈕 */
+.auth-container .google-signin-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+  min-height: 44px;          /* 預留按鈕高度，避免 GIS 載入前畫面跳動 */
+}
+
+/* 登入頁底部說明文字（首次登入贈金幣提示） */
+.auth-container .login-hint {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-dim);
+}

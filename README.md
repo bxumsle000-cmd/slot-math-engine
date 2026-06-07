@@ -22,7 +22,7 @@
 | **Python** | 全程型別標註、PEP 8、dataclass、generator、NumPy 向量化計算 |
 | **資料庫** | MySQL + SQLAlchemy ORM、交易管理、分頁查詢、稽核日誌、`Decimal` 金額精度 |
 | **軟體工程** | 五層解耦架構、單一資料來源（改一處全自動連動）、47 個自動化測試 |
-| **全端開發** | FastAPI（JWT 認證）+ 原生 HTML/CSS/JS 前端，前後端同 port、無 CORS |
+| **全端開發** | FastAPI（Google 登入 + JWT 認證）+ 原生 HTML/CSS/JS 前端，前後端同 port、無 CORS |
 | **數學建模** | 理論 RTP 精確解（外積向量化）、馬可夫鏈 Free Spin 模型、蒙地卡羅驗證 |
 
 ---
@@ -73,7 +73,7 @@
 
 ## 技術棧
 
-- **後端**：FastAPI · SQLAlchemy · PyMySQL · python-jose（JWT）· bcrypt
+- **後端**：FastAPI · SQLAlchemy · PyMySQL · python-jose（JWT）· google-auth（Google 登入驗證）
 - **數學/模擬**：NumPy
 - **儀表板**：Streamlit · Plotly · pandas
 - **前端**：原生 HTML / CSS / JavaScript（無框架）
@@ -88,12 +88,19 @@
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-# 2. 設定資料庫連線（複製 .env 範例後填入 MySQL 帳密）
-#    DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_NAME
+# 2. 設定環境變數（複製 .env 範例後填入）
+#    DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_NAME  ← MySQL 連線
+#    JWT_SECRET                                           ← 本站 JWT 簽章金鑰
+#    GOOGLE_CLIENT_ID                                     ← Google OAuth Client ID（登入用）
+#    並將同一組 Client ID 填進 frontend/js/main.js 的 GOOGLE_CLIENT_ID
+
+# 2-1. 到 Google Cloud Console 申請 OAuth 2.0 Client ID（網頁應用程式），
+#      在 Authorized JavaScript origins 加入 http://localhost:8000 與 http://127.0.0.1:8000
 
 # 3. 啟動後端（自動建資料庫與資料表）
 PYTHONPATH=. .venv/bin/uvicorn game_api.main:app --reload
-#    瀏覽器開 http://localhost:8000 即可遊玩（前後端同 port）
+#    瀏覽器開 http://localhost:8000，用 Google 帳號登入即可遊玩（前後端同 port）
+#    首次登入會自動建立帳號並贈送 1000 金幣
 
 # 4. 啟動分析儀表板
 PYTHONPATH=. .venv/bin/streamlit run dashboard/app.py
@@ -130,7 +137,7 @@ PYTHONPATH=. .venv/bin/pytest tests/ -v
 ```
 core/        數學核心層（理論計算，純函式無副作用）
 simulator/   蒙地卡羅模擬層（隨機驗證理論值）
-game_api/    FastAPI 後端（MySQL + JWT + 稽核日誌）
+game_api/    FastAPI 後端（MySQL + Google 登入 + JWT + 稽核日誌）
 frontend/    原生前端遊戲介面
 dashboard/   Streamlit 互動分析儀表板
 tests/       自動化測試
@@ -139,9 +146,9 @@ tests/       自動化測試
 
 ## 其他設計摘要
 
-- **安全性**：bcrypt 密碼雜湊（含 salt、不存明文）、JWT 認證（24 小時有效期）、Free Spin 期間鎖定押注金額（防止 FS 中改注作弊）、敏感資訊(DB 密碼、JWT 金鑰)集中於 .env,不進版控
+- **安全性**：Google 登入（OpenID Connect，後端驗證 id_token 的簽章 / aud / exp / email_verified）、登入與驗票解耦（Google 只負責認人，後續一律用本站 JWT）、JWT 認證（24 小時有效期）、Free Spin 期間鎖定押注金額（防止 FS 中改注作弊）、敏感資訊(DB 密碼、JWT 金鑰、Google Client ID)集中於 .env,不進版控
 
-- **RESTful API 設計**：路徑統一 `/api/v1` 版本前綴、語意化狀態碼（201 建立 / 400 餘額不足 / 401 未授權 / 409 帳號重複 / 422 欄位驗證失敗）、Pydantic 自動驗證輸入、回應格式統一 JSON
+- **RESTful API 設計**：路徑統一 `/api/v1` 版本前綴、語意化狀態碼（200 成功 / 400 餘額不足 / 401 未授權 / 422 欄位驗證失敗）、Pydantic 自動驗證輸入、回應格式統一 JSON
 
 - **可維護性 / 架構**：五層解耦（`core` 為純函式、無副作用、不依賴上層）、遊戲參數集中於 `core/config.py` 與 `core/reel.py` 、`spin()` 同時供 API 與分析層共用、前端賠付表與付線由 `/config` 動態取得
 

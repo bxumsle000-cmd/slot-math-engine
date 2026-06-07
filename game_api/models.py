@@ -18,13 +18,15 @@ class Player(Base):  # 玩家資料表，對應 DB 的 players 資料表
     """
     玩家帳號資料表。
 
-    每一列代表一個玩家，記錄帳號資訊與當前餘額。
+    每一列代表一個玩家，記錄 Google 帳號資訊與當前餘額。
+    身分一律來自 Google 登入（OpenID Connect），不存密碼。
     餘額使用 DECIMAL(12, 2) 避免浮點數精度問題（例如 100.00 不會變成 99.99999）。
 
     Args:
         id:                   玩家唯一識別碼，自動遞增
-        username:             帳號名稱，不可重複
-        password_hash:        bcrypt 雜湊後的密碼，不存明文
+        google_sub:           Google 帳號唯一識別碼（id_token 的 sub），跨登入永久不變，認帳號就靠它
+        email:                Google 帳號 email，不可重複（顯示與聯絡用）
+        username:             顯示名稱（取自 Google 個人資料的 name），可重複，僅供 UI 顯示
         balance:              錢包餘額，單位：元，精確到小數點後 2 位
         free_spins_remaining: 剩餘 Free Spin 局數（0 = 一般模式）
         fs_locked_bet:        FS 期間鎖定的押注金額（0 = 非 FS 狀態，防止 FS 中改押注作弊）
@@ -34,8 +36,9 @@ class Player(Base):  # 玩家資料表，對應 DB 的 players 資料表
     __tablename__ = "players"  # 對應 MySQL 中的資料表名稱
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)                       # 玩家唯一識別碼，自動遞增
-    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)              # 帳號名稱，不可重複
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)                    # bcrypt 雜湊後的密碼，不存明文
+    google_sub: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)           # Google 帳號唯一識別碼（id_token 的 sub），認帳號就靠它
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)                # Google 帳號 email，不可重複
+    username: Mapped[str] = mapped_column(String(50), nullable=False)                           # 顯示名稱（取自 Google name），可重複，僅供 UI 顯示
     balance: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)          # 錢包餘額，單位：元，精確到小數點後 2 位
     free_spins_remaining: Mapped[int] = mapped_column(Integer, nullable=False, default=0)        # 剩餘 Free Spin 局數（0 = 一般模式）
     fs_locked_bet: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)   # FS 期間鎖定的押注金額（0 = 非 FS 狀態，防止 FS 中改押注作弊）

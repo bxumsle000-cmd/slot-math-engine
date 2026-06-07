@@ -5,6 +5,10 @@
  * 路由由 URL hash 控制（#login / #game / #history / #deposit）。
  */
 
+// ── Google 登入設定 ───────────────────────────────────────────────
+// 本站的 Google OAuth Client ID，需與後端 .env 的 GOOGLE_CLIENT_ID 相同
+const GOOGLE_CLIENT_ID = "982303414279-73eq3lnr4p7tgfqe2ctt0ligfmdhs9io.apps.googleusercontent.com";
+
 // ── 當前玩家資料（登入後填入） ────────────────────────────────────
 let currentPlayer = null;
 
@@ -19,18 +23,18 @@ const showMsg = (containerId, text, isError = true) => {
 };
 
 // ── 頁面切換 ─────────────────────────────────────────────────────
-const PAGES = ["login", "register", "game", "history", "deposit"];
+const PAGES = ["login", "game", "history", "deposit"];
 let currentPageName = null;  // 目前顯示中的頁面名稱（供 hashchange 判斷是否需要切換、避免重複 init）
 
 // 依 URL hash 與登入狀態，解析出「實際應該顯示」的頁面
-// 未登入：只允許 login／register，其餘一律導回 login
+// 未登入：一律導回 login（唯一的未登入頁）
 // 已登入：只允許 game／history／deposit，其餘一律導回 game
 function resolvePageFromHash() {  // 解析 hash → 合法頁面名稱
   const target = window.location.hash.slice(1);
   if (!currentPlayer) {
-    return target === "register" ? "register" : "login";
+    return "login";
   }
-  return PAGES.includes(target) && target !== "login" && target !== "register" ? target : "game";
+  return PAGES.includes(target) && target !== "login" ? target : "game";
 }
 
 function showPage(name) {
@@ -74,71 +78,51 @@ function formatBalance(b) {
   return Number(b).toLocaleString("en-US", { maximumFractionDigits: 2 });  // 千分位
 }
 
-// ── 登入流程 ─────────────────────────────────────────────────────
-async function handleLogin() {
-  const username = $("login-username").value.trim();
-  const password = $("login-password").value;
-
-  if (!username || !password) {
-    showMsg("login-msg", "請輸入帳號和密碼");
-    return;
-  }
-
-  const btn = $("btn-login");
-  btn.disabled = true;
-  btn.textContent = "登入中...";
-
+// ── Google 登入流程 ──────────────────────────────────────────────
+// GIS 完成 Google 登入後，會帶著 CredentialResponse 回呼這個函式，
+// response.credential 就是 Google 簽發的 id_token。
+async function handleGoogleCredential(response) {  // 收 Google id_token → 換本站 JWT → 進遊戲
+  showMsg("login-msg", "登入中...", false);
   try {
-    await API.login(username, password);
+    await API.loginWithGoogle(response.credential);  // 把 id_token 送後端驗證並取得本站 JWT
     currentPlayer = await API.getMe();
     showMsg("login-msg", "");
     updateHeader();
     showPage("game");
   } catch (err) {
-    showMsg("login-msg", err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "登 入";
+    showMsg("login-msg", err.message);  // 後端驗證失敗（401）等錯誤顯示在登入頁
   }
 }
 
-// ── 註冊流程 ─────────────────────────────────────────────────────
-async function handleRegister() {
-  const username = $("register-username").value.trim();
-  const password = $("register-password").value;
-
-  if (!username) {
-    showMsg("register-msg", "請輸入帳號");
-    return;
-  }
-  if (password.length < 6) {
-    showMsg("register-msg", "密碼至少 6 字元");
-    return;
-  }
-
-  const btn = $("btn-register");
-  btn.disabled = true;
-  btn.textContent = "註冊中...";
-
-  try {
-    await API.register(username, password, 1000);  // 新用戶贈送 1000 金幣
-    showMsg("register-msg", "註冊成功，正在自動登入...", false);
-    await API.login(username, password);
-    currentPlayer = await API.getMe();
-    updateHeader();
-    showPage("game");
-  } catch (err) {
-    showMsg("register-msg", err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "註 冊";
+// 初始化 Google Identity Services 並把登入按鈕渲染到登入頁容器
+function initGoogleSignIn() {  // 設定 GIS 並渲染「使用 Google 登入」按鈕
+  if (!window.google || !google.accounts) return;  // GIS 函式庫尚未載入完成時先跳過
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,        // 指定本站的 OAuth Client ID
+    callback: handleGoogleCredential,   // 登入成功後由 GIS 回呼此函式並帶入 id_token
+  });
+  const container = $("google-signin-btn");
+  if (container) {
+    google.accounts.id.renderButton(container, {
+      theme: "filled_blue",   // 按鈕配色
+      size: "large",          // 按鈕尺寸
+      text: "signin_with",    // 按鈕文字樣式（Sign in with Google）
+      shape: "pill",          // 圓角藥丸造型
+    });
   }
 }
+
+// GIS 函式庫（async 載入）就緒時會自動呼叫這個全域 hook，於此渲染登入按鈕
+window.onGoogleLibraryLoad = initGoogleSignIn;
 
 // ── 登出 ─────────────────────────────────────────────────────────
 function handleLogout() {
   API.logout();
   currentPlayer = null;
+  // 關閉 GIS 自動選號，避免登出後又被自動帶回上一個 Google 帳號
+  if (window.google && google.accounts) {
+    google.accounts.id.disableAutoSelect();
+  }
   updateHeader();
   showPage("login");
 }
@@ -163,20 +147,7 @@ async function bootIfLoggedIn() {
 
 // ── 綁定事件 ─────────────────────────────────────────────────────
 function bindEvents() {
-  $("btn-login").addEventListener("click", handleLogin);
-  $("btn-register").addEventListener("click", handleRegister);
   $("btn-logout").addEventListener("click", handleLogout);
-
-  $("link-to-register").addEventListener("click", () => showPage("register"));
-  $("link-to-login").addEventListener("click", () => showPage("login"));
-
-  // Enter 鍵送出表單
-  ["login-username", "login-password"].forEach((id) =>
-    $(id).addEventListener("keydown", (e) => e.key === "Enter" && handleLogin())
-  );
-  ["register-username", "register-password"].forEach((id) =>
-    $(id).addEventListener("keydown", (e) => e.key === "Enter" && handleRegister())
-  );
 
   // Header 導覽
   document.querySelectorAll(".nav-btn[data-page]").forEach((btn) => {
@@ -221,5 +192,6 @@ document.addEventListener("DOMContentLoaded", () => {
   bindGameEvents();     // 綁定遊戲頁的按鈕（SPIN、押注 +/-、賠付表）
   bindHistoryEvents();  // 綁定歷史頁的按鈕（篩選、翻頁）
   bindDepositEvents();  // 綁定儲值頁的按鈕（快速金額、確認）
+  initGoogleSignIn();   // 若 GIS 已載入則立即渲染登入按鈕；未載入則由 onGoogleLibraryLoad 補渲染
   bootIfLoggedIn();
 });

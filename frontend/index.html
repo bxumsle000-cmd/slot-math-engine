@@ -12,6 +12,9 @@
   <link rel="stylesheet" href="css/pages.css">
   <link rel="stylesheet" href="css/modal.css">
   <link rel="stylesheet" href="css/bigwin.css">
+
+  <!-- Google Identity Services：提供「使用 Google 登入」按鈕與 id_token -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div id="app">
@@ -38,53 +41,18 @@
          ─────────────────────────────────────────────────────────── -->
     <main class="app-main" id="app-main">
 
-      <!-- 登入頁 -->
+      <!-- 登入頁（使用 Google 登入） -->
       <section id="page-login" class="auth-container hidden">
         <div class="card">
           <h1 class="title">GOLD SLOT</h1>
-          <p class="subtitle">登入以開始遊戲</p>
+          <p class="subtitle">使用 Google 帳號登入即可開始遊戲</p>
 
           <div id="login-msg"></div>
 
-          <div class="form-group" style="margin-top: 24px;">
-            <label>帳號</label>
-            <input type="text" id="login-username" class="input" placeholder="輸入帳號" autocomplete="username">
-          </div>
-          <div class="form-group">
-            <label>密碼</label>
-            <input type="password" id="login-password" class="input" placeholder="輸入密碼" autocomplete="current-password">
-          </div>
+          <!-- Google Sign-In 按鈕由 main.js 透過 GIS 動態渲染進這個容器 -->
+          <div id="google-signin-btn" class="google-signin-wrap"></div>
 
-          <button class="btn btn-primary" id="btn-login">登 入</button>
-
-          <p class="switch-link">
-            還沒有帳號？<a id="link-to-register">立即註冊</a>
-          </p>
-        </div>
-      </section>
-
-      <!-- 註冊頁 -->
-      <section id="page-register" class="auth-container hidden">
-        <div class="card">
-          <h1 class="title">註冊帳號</h1>
-          <p class="subtitle">新帳號預設贈送 1000 金幣</p>
-
-          <div id="register-msg"></div>
-
-          <div class="form-group" style="margin-top: 24px;">
-            <label>帳號（1-50 字元）</label>
-            <input type="text" id="register-username" class="input" placeholder="設定帳號">
-          </div>
-          <div class="form-group">
-            <label>密碼（至少 6 字元）</label>
-            <input type="password" id="register-password" class="input" placeholder="設定密碼">
-          </div>
-
-          <button class="btn btn-primary" id="btn-register">註 冊</button>
-
-          <p class="switch-link">
-            已有帳號？<a id="link-to-login">前往登入</a>
-          </p>
+          <p class="subtitle login-hint">首次登入會自動建立帳號，並贈送 1000 金幣</p>
         </div>
       </section>
 

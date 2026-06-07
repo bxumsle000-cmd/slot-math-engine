@@ -60,13 +60,14 @@ function toFormBody(obj) {
 // ── 端點封裝 ──────────────────────────────────────────────────────────────────
 const API = {
   // 認證
-  async login(username, password) {
-    const data = await request("/api/v1/auth/login", {
+  async loginWithGoogle(idToken) {
+    // 把 Google 回傳的 id_token 送給後端驗證；後端驗章後簽發本站 JWT 回來
+    const data = await request("/api/v1/auth/google", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: toFormBody({ username, password }),
+      body: toFormBody({ id_token: idToken }),
     });
-    setToken(data.access_token);  // 登入成功立刻存 token
+    setToken(data.access_token);  // 登入成功立刻存本站 JWT
     return data;
   },
 
@@ -79,14 +80,6 @@ const API = {
   },
 
   // 玩家
-  async register(username, password, initialBalance = 1000) {
-    return request("/api/v1/players", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: toFormBody({ username, password, initial_balance: initialBalance }),
-    });
-  },
-
   async getMe() {
     return request("/api/v1/players/me");
   },
