@@ -15,13 +15,22 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 DB_HOST     = os.getenv("DB_HOST",     "172.22.240.1")  # Windows host IP（MySQL 裝在 Windows，從 WSL2 連過去）
-DB_PORT     = int(os.getenv("DB_PORT", "3306"))          # MySQL 預設埠號
+DB_PORT     = int(os.getenv("DB_PORT") or "3306")        # MySQL 埠號；空字串或未設都退回 3306（避免 int("") 崩潰）
 DB_USER     = os.getenv("DB_USER",     "root")           # MySQL 帳號
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")               # MySQL 密碼，必須透過環境變數設定
 DB_NAME     = os.getenv("DB_NAME",     "slot_game")      # 目標資料庫名稱
 
-# MySQL 連線字串：格式為 mysql+pymysql://帳號:密碼@主機:埠號/資料庫名稱
-DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# 連線字串決定順序：
+# 1. 雲端平台（如 Railway）注入單一的 DATABASE_URL → 直接採用，只需設一個變數，最不易出錯。
+# 2. 本機開發沒有 DATABASE_URL → 用上面的 DB_* 參數自行拼出連線字串。
+_RAW_DATABASE_URL = os.getenv("DATABASE_URL")  # 雲端提供的完整連線字串；本機沒設時為 None
+if _RAW_DATABASE_URL:
+    # Railway 的 MYSQL_URL 開頭是 mysql://，但 SQLAlchemy 需指定 driver，
+    # 故把 scheme 補成 mysql+pymysql://（已是該格式則原樣保留）。
+    DATABASE_URL = _RAW_DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)  # 只換開頭第一個
+else:
+    # MySQL 連線字串：格式為 mysql+pymysql://帳號:密碼@主機:埠號/資料庫名稱
+    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
 def _ensure_database_exists() -> None:  # 啟動時確保資料庫存在，不存在就自動建立
