@@ -8,29 +8,6 @@ reel.py - 多線捲軸模組（5×3 格式）
 from dataclasses import dataclass, field
 from itertools import chain, zip_longest
 
-
-def _build_strip(counts: dict[str, int]) -> "ReelStrip":  # 從符號計數建立捲軸帶
-    """
-    將 {符號: 格數} 展開為交錯排列的捲軸帶。
-
-    用 zip_longest 讓各符號均勻散佈在捲軸上，
-    避免同一符號連續堆疊，符合實體捲軸的排列慣例。
-
-    例：{"A": 3, "B": 2, "C": 1} →
-        zip_longest: [A,B,C], [A,B], [A]
-        chain:        A B C A B A
-
-    Args:
-        counts: {符號名稱: 出現格數} 的字典
-
-    Returns:
-        ReelStrip，已依 zip_longest 交錯排列
-    """
-    buckets = [[sym] * cnt for sym, cnt in counts.items()]
-    symbols = [s for s in chain.from_iterable(zip_longest(*buckets)) if s is not None]
-    return ReelStrip(symbols=symbols)
-
-
 @dataclass
 class ReelStrip:
     """
@@ -38,8 +15,8 @@ class ReelStrip:
 
     Attributes:
         symbols: 捲軸帶停格序列，長度 = total_stops（本專案預設 40 格）。
-                 索引即停格位置（0-indexed），symbols[i] 是停在第 i 格時的上排符號。
-                 環狀結構：超出末尾自動繞回（見 window() 的 % total_stops）。
+                 索引即停格位置，symbols[i] 是停在第 i 格時的上排符號。
+                 環狀結構：超出末尾自動繞回（ window() 的 % total_stops）。
                  例：symbols = ['Blank','Cherry','Lemon','BAR','Cherry', ...]
     """
     symbols: list[str] = field(default_factory=list)  # 捲軸帶停格序列（有序，長度 = 總停格數）
@@ -72,6 +49,27 @@ class ReelStrip:
         """
         return [self.symbols[(stop + i) % self.total_stops] for i in range(rows)]
 
+
+def _build_strip(counts: dict[str, int]) -> "ReelStrip":  # 從符號計數建立捲軸帶
+    """
+    將 {符號: 格數} 展開為交錯排列的捲軸帶。
+
+    用 zip_longest 讓各符號均勻散佈在捲軸上，
+    避免同一符號連續堆疊，符合實體捲軸的排列慣例。
+
+    例：{"A": 3, "B": 2, "C": 1} →
+        zip_longest: [A,B,C], [A,B], [A]
+        chain:        A B C A B A
+
+    Args:
+        counts: {符號名稱: 出現格數} 的字典
+
+    Returns:
+        ReelStrip，已依 zip_longest 交錯排列
+    """
+    buckets = [[sym] * cnt for sym, cnt in counts.items()]
+    symbols = [s for s in chain.from_iterable(zip_longest(*buckets)) if s is not None]
+    return ReelStrip(symbols=symbols)
 
 # ── 捲軸帶設計：改格數即可調整機率，_build_strip 自動展開 ──────────────────────
 REEL_CONFIG: dict[str, int] = {
