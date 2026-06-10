@@ -90,6 +90,7 @@ function openPaytableModal() {
           <ul class="modal-list">
             <li>觸發條件：可見方格出現 <strong>${fs.min_scatter} 軸或以上</strong>的 ⭐ Scatter</li>
             <li>免費局數：<strong>${fs.free_spin_count} 局</strong></li>
+            <li>續場（Retrigger）：Free Spin 期間再出現 <strong>${fs.min_scatter} 軸或以上</strong>的 ⭐ Scatter，剩餘局數<strong>重置為 ${fs.free_spin_count} 局</strong>（非累加）</li>
             <li>FS 期間賠付：<strong>${fs.win_multiplier}× 倍率</strong></li>
             <li>Wild（彩虹）可替代任何符號（Scatter 除外）以組成最高獎</li>
           </ul>

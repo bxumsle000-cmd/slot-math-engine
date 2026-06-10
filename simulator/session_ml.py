@@ -72,8 +72,8 @@ def simulate_player_journeys(  # 模擬多位玩家的完整遊戲旅程
     中獎收益 = 本局 total_multiplier 單位；淨損益 = total_multiplier - num_lines。
 
     若傳入 fs_config，則以「每局真實 Scatter 結果」判定是否觸發 Free Spin
-    （出現 ≥ FS_MIN_SCATTER 軸 Scatter 即觸發，與 engine.spin 一致），不讀 config.trigger_prob：
-    FS 局不額外收費，贏分乘以 win_multiplier；FS 期間每局同樣以 Scatter 判定 retrigger（堆疊 +N 局）。
+    （出現 ≥ FS_MIN_SCATTER 軸 Scatter 即觸發，與 engine.spin 一致）：
+    FS 局不額外收費，贏分乘以 win_multiplier；FS 期間每局同樣以 Scatter 判定 retrigger（重置為 N 局）。
 
     Args:
         num_players: 模擬玩家數（越多統計越穩定）
@@ -82,8 +82,8 @@ def simulate_player_journeys(  # 模擬多位玩家的完整遊戲旅程
         stop_win: 停利線：餘額高於此值立即停止
         max_spins: 每位玩家的最大局數上限
         fs_config: Free Spin 參數設定（None 表示純底層遊戲，不含 FS）；
-                   僅 free_spin_count 與 win_multiplier 生效，trigger_prob／retrigger_prob 不採用
-                   （觸發與續場改由真實 Scatter 結果衍生，與 calculate_freespin_rtp 一致）
+                   提供 free_spin_count 與 win_multiplier
+                   （觸發與續場由真實 Scatter 結果衍生，與 calculate_freespin_rtp 一致）
         seed: 隨機種子（None = 每次不同，固定值讓結果可重現）
         reel_strips: 自訂捲軸帶列表（None 表示使用預設 REEL_STRIPS）
 
@@ -148,7 +148,7 @@ def simulate_player_journeys(  # 模擬多位玩家的完整遊戲旅程
                         state -= 1  # 消耗一局
                         if fs_outcome.free_spin_triggered:       # FS 期間 Scatter retrigger
                             fs_retriggers += 1
-                            state += fs_config.free_spin_count   # 追加局數
+                            state = fs_config.free_spin_count    # 重置為 N 局（= N，非 +N）
 
             # 押注模型：每線押 1 單位，押滿 num_lines 條，每局成本 = num_lines
             # payout 是倍率總和（已含 FS），直接對應「贏回幾單位」

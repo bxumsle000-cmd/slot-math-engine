@@ -13,7 +13,7 @@ from core.calculator import calculate_rtp, PAYTABLE
 from core.markov import (
     FreespinConfig,
     build_transition_matrix,
-    stationary_distribution,
+    expected_fs_spins,
 )
 from core.markov_freespin_rtp import calculate_freespin_rtp
 
@@ -256,113 +256,106 @@ class TestCalculateMultilineRtp:
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 五、markov.py - build_transition_matrix 測試
+# 五、markov.py - build_transition_matrix 測試（=N 重置吸收鏈）
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# 重置觸發機率 r 已非 FreespinConfig 欄位（改由捲軸衍生並以參數傳入），
+# 測試以下列模組常數代表「標準測試用」的 r，搭配 default_config 的 N、M 使用。
+DEFAULT_R = 0.10   # 標準測試重置觸發機率 r
+
 
 @pytest.fixture
 def default_config() -> FreespinConfig:  # 提供一組標準測試用 FS 設定，避免每個測試重複建立
-    """標準測試用 Free Spin 設定（p=0.02, N=5, r=0.10, M=3）。"""
+    """標準測試用 Free Spin 設定（N=5, M=3；r 見 DEFAULT_R）。"""
     return FreespinConfig(
-        trigger_prob=0.02,
         free_spin_count=5,
-        retrigger_prob=0.10,
         win_multiplier=3.0,
     )
 
 
 class TestBuildTransitionMatrix:
 
-    def test_為2x2巨觀矩陣(self, default_config):  # 新模型用 {一般, FS} 兩個巨觀狀態，矩陣固定 2×2
+    def test_為N加一方陣(self, default_config):  # 狀態 = 剩餘局數 0~N，矩陣為 (N+1)×(N+1)
         """
-        轉移矩陣形狀應為 (2, 2)，與 free_spin_count 無關。
-        Why: 堆疊式 retrigger 讓剩餘局數無上限，改以 2 狀態巨觀鏈表示。
+        轉移矩陣形狀應為 (N+1, N+1)，狀態 i = 剩餘免費局數（0 = FS 結束）。
+        Why: 重置規則讓剩餘局數封頂在 N，狀態有限，可建精確吸收鏈。
         """
-        T = build_transition_matrix(default_config)
-        assert T.shape == (2, 2)
+        T = build_transition_matrix(default_config, DEFAULT_R)
+        N = default_config.free_spin_count
+        assert T.shape == (N + 1, N + 1)
 
     def test_每列機率加總為一(self, default_config):  # 馬可夫轉移矩陣的基本性質：每列代表從某狀態出發的所有可能轉移
         """
         轉移矩陣每一列（row）的機率加總必須等於 1.0。
         Why: 從任一狀態出發，必定轉移到某個狀態，機率和 = 1 是馬可夫矩陣的基本約束。
         """
-        T = build_transition_matrix(default_config)
+        T = build_transition_matrix(default_config, DEFAULT_R)
         row_sums = T.sum(axis=1)
         np.testing.assert_allclose(row_sums, 1.0, atol=1e-12)
 
-    def test_一般狀態未觸發機率正確(self, default_config):  # T[0][0] = 1 - trigger_prob
+    def test_狀態0為吸收態(self, default_config):  # T[0][0] = 1：剩餘歸零，FS 已結束
         """
-        T[0][0]（一般模式停留機率）應等於 1 - trigger_prob。
+        狀態 0（剩餘局數歸零、FS 結束）應為吸收態：T[0][0] = 1。
+        Why: FS 結束後回一般模式，不再有 FS 內轉移，故為吸收態。
         """
-        T = build_transition_matrix(default_config)
-        expected = 1 - default_config.trigger_prob
-        assert abs(T[0][0] - expected) < 1e-12
+        T = build_transition_matrix(default_config, DEFAULT_R)
+        assert T[0][0] == 1.0
 
-    def test_一般狀態觸發機率正確(self, default_config):  # T[0][1] = trigger_prob（一般 → FS）
+    def test_重置與倒數轉移機率正確(self, default_config):  # 從剩 k 局：機率 r→狀態 N，機率 1-r→狀態 k-1
         """
-        T[0][1]（一般模式觸發 FS、進入 FS 巨觀狀態的機率）應等於 trigger_prob。
+        從任一 FS 狀態 k，機率 r 重置到狀態 N、機率 1-r 倒數到狀態 k-1。
+        Why: 這正是「=N 重置」規則的核心——retrigger 把剩餘局數打回上限 N。
         """
-        T = build_transition_matrix(default_config)
-        expected = default_config.trigger_prob
-        assert abs(T[0][1] - expected) < 1e-12
-
-    def test_FS每局退出率正確(self, default_config):  # T[1][0] = q = (1 - N·r) / N
-        """
-        T[1][0]（FS 當局結束、回一般模式的機率）應等於 q = (1 - N·r) / N。
-        Why: 堆疊式 retrigger 下，FS 平均局數為 N/(1-N·r)，其倒數即每局退出率 q。
-        """
-        T = build_transition_matrix(default_config)
+        T = build_transition_matrix(default_config, DEFAULT_R)
         N = default_config.free_spin_count
-        r = default_config.retrigger_prob
-        expected_q = (1 - N * r) / N
-        assert abs(T[1][0] - expected_q) < 1e-12
-        assert abs(T[1][1] - (1 - expected_q)) < 1e-12  # FS 延續機率 = 1 - q
-
-    def test_Nr超過一拋出例外(self):  # N·r ≥ 1 時 FS 期望局數發散，應拒絕
-        """
-        free_spin_count × retrigger_prob ≥ 1 時應拋出 ValueError。
-        Why: 每局期望新增局數 ≥ 消耗局數，Free Spin 永不結束、RTP 無定義。
-        """
-        bad = FreespinConfig(trigger_prob=0.02, free_spin_count=10, retrigger_prob=0.2, win_multiplier=3.0)
-        with pytest.raises(ValueError):
-            build_transition_matrix(bad)
+        r = DEFAULT_R
+        assert abs(T[2][N] - r) < 1e-12        # 剩 2 局：機率 r 重置回 N 局
+        assert abs(T[2][1] - (1 - r)) < 1e-12  # 剩 2 局：機率 1-r 倒數到剩 1 局
+        assert abs(T[1][0] - (1 - r)) < 1e-12  # 剩 1 局：機率 1-r 倒數到 0（FS 結束）
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 六、markov.py - stationary_distribution 測試
+# 六、markov.py - expected_fs_spins 測試（平均 FS 局數 E[FS]）
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-class TestStationaryDistribution:
+class TestExpectedFsSpins:
 
-    def test_穩態比例落在合法範圍(self, default_config):  # π_normal 是比例值，必定介於 0 到 1
+    def test_與封閉解一致(self, default_config):  # E[FS] = S/(1-r·S)，S=[1-(1-r)^N]/r
         """
-        pi_normal 應介於 0 和 1 之間（機率值的基本約束）。
+        吸收鏈求得的 E[FS] 應與封閉解 S/(1-r·S)（S=[1-(1-r)^N]/r）精確一致。
+        Why: 兩種獨立推導（基本矩陣 vs 解析遞迴）互為驗證，確保數值正確。
         """
-        pi = stationary_distribution(default_config)
-        assert 0 < pi < 1
-
-    def test_解析公式與手算一致(self, default_config):  # π₀ = (1-N·r) / ((1-N·r) + N×p)
-        """
-        stationary_distribution 的結果應與解析公式 (1-N·r)/((1-N·r)+N×p) 精確一致。
-        Why: 堆疊式 retrigger 下，一次觸發期望 FS 局數 N/(1-N·r)，據此推得新穩態公式。
-        """
-        p = default_config.trigger_prob
-        r = default_config.retrigger_prob
         N = default_config.free_spin_count
+        r = DEFAULT_R
+        S = (1 - (1 - r) ** N) / r        # 收斂判據用的中間量 S
+        expected = S / (1 - r * S)        # 封閉解 E[FS]
+        actual = expected_fs_spins(default_config, r)
+        assert abs(actual - expected) < 1e-9
 
-        expected = (1 - N * r) / ((1 - N * r) + N * p)  # 新模型一般模式穩態公式
-        actual = stationary_distribution(default_config)
-        assert abs(actual - expected) < 1e-12
-
-    def test_觸發機率越高留在一般模式越少(self):  # trigger_prob ↑ → 更常進 FS → pi_normal ↓
+    def test_無retrigger時恰為N局(self, default_config):  # r=0：純倒數，平均剛好 N 局
         """
-        trigger_prob 越高，玩家進入 FS 的頻率越高，一般模式的穩態比例應越低。
+        r = 0（永不 retrigger）時，E[FS] 應恰等於 N 局（純倒數無加碼）。
         """
-        config_low_p  = FreespinConfig(trigger_prob=0.01, free_spin_count=5, retrigger_prob=0.0, win_multiplier=3.0)
-        config_high_p = FreespinConfig(trigger_prob=0.10, free_spin_count=5, retrigger_prob=0.0, win_multiplier=3.0)
+        N = default_config.free_spin_count
+        assert abs(expected_fs_spins(default_config, 0.0) - N) < 1e-12
 
-        pi_low  = stationary_distribution(config_low_p)
-        pi_high = stationary_distribution(config_high_p)
-        assert pi_low > pi_high
+    def test_重置規則永不發散(self):  # N·r ≥ 1 也收斂，不像 +N 堆疊會發散
+        """
+        重置規則對 N·r ≥ 1 仍收斂，E[FS] 為有限正值（+N 堆疊版此時會發散）。
+        Why: 重置使剩餘局數封頂在 N，發散判據 r·S = 1-(1-r)^N 恆 < 1。
+        """
+        config = FreespinConfig(free_spin_count=10, win_multiplier=3.0)
+        efs = expected_fs_spins(config, 0.2)  # N·r = 2 ≥ 1：+N 版會發散，重置版不會
+        assert efs > 0 and np.isfinite(efs)
+
+    def test_retrigger越高FS越長(self):  # r ↑ → 重置越頻繁 → E[FS] 越大
+        """
+        重置觸發機率 r 越高，FS 平均越長，E[FS] 應單調遞增。
+        """
+        config = FreespinConfig(free_spin_count=5, win_multiplier=3.0)
+        efs_low  = expected_fs_spins(config, 0.05)  # 低 retrigger
+        efs_high = expected_fs_spins(config, 0.15)  # 高 retrigger
+        assert efs_high > efs_low
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

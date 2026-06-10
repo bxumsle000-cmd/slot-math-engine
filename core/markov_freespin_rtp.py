@@ -16,7 +16,7 @@ from core.markov import (
     FreespinConfig,
     MarkovResult,
     build_transition_matrix,
-    stationary_distribution,
+    expected_fs_spins,
 )
 from core.calculator import calculate_rtp
 from core.reel import REEL_STRIPS, ReelStrip
@@ -70,52 +70,52 @@ def calculate_freespin_rtp(  # 計算多線含 Free Spin 的整體理論 RTP
     """
     計算多線機台加入 Free Spin 後的整體理論 RTP。
 
-    觸發機率與續場機率「都」由捲軸帶的 Scatter 分佈自動衍生，且兩者相等
+    觸發機率與重置觸發機率「都」由捲軸帶的 Scatter 分佈自動衍生，且兩者相等
     （本遊戲一般局與 FS 共用同一條捲軸、同樣 ≥3 Scatter 條件）。
-    因此 config.trigger_prob 與 config.retrigger_prob 一律被忽略，
-    config 只有 free_spin_count（N）與 win_multiplier（M）真正生效——
-    這確保數學模型與實際捲軸行為一致，retrigger_prob 不是可獨立調整的旋鈕。
+    因此 p、r 不是 config 的欄位，而是在此算出後以參數傳入馬可夫函式，
+    config 只有 free_spin_count（N）與 win_multiplier（M）兩個可調旋鈕——
+    這確保數學模型與實際捲軸行為一致，retrigger 不是可獨立調整的旋鈕。
 
-    RTP 公式：
-        total_rtp = base_rtp × (π_normal + π_free × win_multiplier) / π_normal
+    RTP 公式（更新-回報定理；p·E[FS] = FS 局數 / 一般局數 的長期比例）：
+        total_rtp = base_rtp × (1 + p · E[FS] · win_multiplier)
+    其中 E[FS] 由「=N 重置」的 (N+1) 狀態吸收鏈精確求得（見 expected_fs_spins）。
 
     Args:
-        config: Free Spin 參數設定；僅 free_spin_count 與 win_multiplier 生效，
-                trigger_prob／retrigger_prob 會被捲軸衍生值覆蓋（見上）
+        config: Free Spin 參數設定（free_spin_count=N、win_multiplier=M）
         reel_strips: 自訂捲軸帶列表（None 表示使用預設 REEL_STRIPS）
 
     Returns:
-        MarkovResult，欄位定義與單線版本相同（可直接交給 dashboard 顯示）
+        MarkovResult，欄位定義與單線版本相同（可直接交給 dashboard 顯示），
+        其 trigger_prob／retrigger_prob 為本函式由捲軸衍生的實際生效值
     """
     reel_strips = reel_strips or REEL_STRIPS  # 顯式傳入 None 時兜底為預設捲軸帶（scatter_trigger_prob 與 calculate_rtp 都需要）
     base_rtp = calculate_rtp(reel_strips=reel_strips).rtp_per_line  # 每線標準化 RTP
 
-    # 觸發機率由捲軸帶 Scatter 分佈衍生，覆蓋 config 傳入值（不採用 config.trigger_prob）
-    # 續場（retrigger）機率為衍生值 = 同一個觸發機率：FS 與一般局共用捲軸、條件相同
-    # → config.retrigger_prob 在此被忽略，retrigger_prob 已降級為衍生值而非可調旋鈕
-    derived_trigger_prob = scatter_trigger_prob(reel_strips)
-    effective_config = FreespinConfig(
-        trigger_prob=derived_trigger_prob,
-        free_spin_count=config.free_spin_count,
-        retrigger_prob=derived_trigger_prob,   # 衍生續場機率 = 觸發機率（非 config 傳入值）
-        win_multiplier=config.win_multiplier,
-    )
+    # 觸發機率由捲軸帶 Scatter 分佈衍生；重置觸發機率 = 同一個觸發機率
+    # （FS 與一般局共用捲軸、條件相同），兩者以參數傳入馬可夫函式，非 config 欄位
+    derived_trigger_prob = scatter_trigger_prob(reel_strips)  # 衍生觸發機率 p（= 重置觸發機率 r）
 
-    T = build_transition_matrix(effective_config)         # 2×2 巨觀狀態轉移矩陣（狀態 0=一般、1=FS）
-    pi_normal = stationary_distribution(effective_config) # 一般模式穩態比例（解析公式）
-    pi_free = 1 - pi_normal                               # Free Spin 模式穩態比例（互補）
+    T = build_transition_matrix(config, derived_trigger_prob)          # (N+1)×(N+1) 吸收轉移矩陣（狀態 i=剩餘局數）
+    expected_fs = expected_fs_spins(config, derived_trigger_prob)      # 精確平均 FS 局數 E[FS]（吸收鏈）
 
-    total_rtp = base_rtp * (pi_normal + pi_free * effective_config.win_multiplier) / pi_normal
+    fs_per_base = derived_trigger_prob * expected_fs     # p·E[FS] = FS局數 / 一般局數 的長期比例
+    pi_normal = 1 / (1 + fs_per_base)                    # 一般模式時間比例（更新-回報）
+    pi_free = 1 - pi_normal                              # Free Spin 模式時間比例（互補）
+
+    total_rtp = base_rtp * (1 + fs_per_base * config.win_multiplier)  # 含 FS 倍率 M 的整體 RTP
     freespin_contribution = total_rtp - base_rtp          # Free Spin 單獨貢獻的 RTP 增量
 
     return MarkovResult(
-        config=effective_config,
+        config=config,
         transition_matrix=T,
         pi_normal=pi_normal,
         pi_free=pi_free,
         base_rtp=base_rtp,
         total_rtp=total_rtp,
         freespin_contribution=freespin_contribution,
+        trigger_prob=derived_trigger_prob,    # 實際生效的觸發機率（衍生值）
+        retrigger_prob=derived_trigger_prob,  # 實際生效的重置觸發機率（= 觸發機率）
+        expected_fs_spins=expected_fs,        # 一次觸發平均 FS 局數 E[FS]
     )
 
 

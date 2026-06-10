@@ -95,7 +95,7 @@ def do_spin(  # 旋轉一局：判斷模式 → 旋轉 → 結算 → 寫入 DB
         2. 使用 fs_locked_bet 計算賠付（忽略前端送的 bet_amount，防止 FS 中改押注作弊）
         3. 賠付 × win_multiplier
         4. free_spins_remaining -= 1
-        5. 若 scatter_count ≥ FS_MIN_SCATTER：追加 FS_FREE_SPIN_COUNT 局（retrigger）
+        5. 若 scatter_count ≥ FS_MIN_SCATTER：重置為 FS_FREE_SPIN_COUNT 局（retrigger，= N 非 +N）
            否則若 free_spins_remaining == 0：FS 結束，fs_locked_bet 清為 0
 
     Args:
@@ -138,8 +138,8 @@ def do_spin(  # 旋轉一局：判斷模式 → 旋轉 → 結算 → 寫入 DB
     awarded_new_fs = False  # 本局是否獲得新一輪 FS（觸發或 retrigger，給前端播放「FS!」橫幅用）
     if is_free_spin:
         player.free_spins_remaining -= 1  # 消耗一局 FS
-        if outcome.free_spin_triggered:  # Scatter retrigger：任何 FS 局都可追加（fs_locked_bet 保持不變）
-            player.free_spins_remaining += DEFAULT_FS_CONFIG.free_spin_count
+        if outcome.free_spin_triggered:  # Scatter retrigger：任何 FS 局都可重置（fs_locked_bet 保持不變）
+            player.free_spins_remaining = DEFAULT_FS_CONFIG.free_spin_count  # 重置為 N 局（= N，非 +N）
             awarded_new_fs = True
         elif player.free_spins_remaining == 0:  # 沒有 Scatter retrigger 且用完所有局數：FS 結束
             player.fs_locked_bet = 0  # 清掉鎖定押注，下一局玩家可自由調整

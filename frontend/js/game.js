@@ -356,7 +356,7 @@ function updateFsBanner(remaining) {
 
     $g("fs-multiplier").textContent = `${winMultiplier}×`;
     titleEl.textContent = "FREE SPIN 進行中";
-    hintEl.textContent = `出現 ${minScatter} 個 Scatter 可追加 ${fsCount} 局`;
+    hintEl.textContent = `出現 ${minScatter} 個 Scatter 可重置為 ${fsCount} 局`;
   } else {
     banner.classList.add("hidden");
     banner.classList.remove("last-spin");
@@ -407,9 +407,9 @@ function handleSpinResult(result) {
     showFsOverlay("🎰 FREE SPIN!", `獲得 ${fsCount} 局免費旋轉`, "trigger");
     Sound.freeSpinTrigger();
   } else if (result.awarded_new_fs && result.is_free_spin) {
-    // 情境 2：FS 中 retrigger
-    showGameMsg(`🔄 RETRIGGER！追加 ${fsCount} 局免費！`, "win");
-    showFsOverlay("🔄 RETRIGGER!", `Free Spin 追加 ${fsCount} 局`, "retrigger");
+    // 情境 2：FS 中 retrigger（重置為 N 局，非累加）
+    showGameMsg(`🔄 RETRIGGER！局數重置為 ${fsCount} 局！`, "win");
+    showFsOverlay("🔄 RETRIGGER!", `Free Spin 局數重置為 ${fsCount} 局`, "retrigger");
     Sound.retrigger();
   } else if (result.is_free_spin && result.free_spins_remaining === 0) {
     // 情境 3：FS 最後一局結束（沒 retrigger）
@@ -423,7 +423,11 @@ function handleSpinResult(result) {
       .map((m, i) => m > 0 ? `付線${i + 1} (${m / numLines}×)` : null)
       .filter(Boolean)
       .join("，");
-    showGameMsg(`💰 ${winLines} 贏得 ${formatBalance(payout)} 金幣！`, "win");
+    // FS 局：付線倍率為基礎值，但 payout 已乘 win_multiplier，於訊息補上優惠倍率提示
+    const fsBonus = result.is_free_spin
+      ? `，X${gameConfig.free_spin.win_multiplier} 優惠倍率`
+      : "";
+    showGameMsg(`💰 ${winLines}${fsBonus} 贏得 ${formatBalance(payout)} 金幣！`, "win");
     Sound.win();
   } else if (result.is_free_spin) {
     showGameMsg("本局 Free Spin 未中獎", "lose");
