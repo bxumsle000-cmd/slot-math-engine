@@ -176,6 +176,7 @@ def analyze_convergence(  # 記錄多線 RTP 收斂過程
     return series
 
 
+# 啟動方式：PYTHONPATH=. .venv/bin/python simulator/analyzer.py
 if __name__ == "__main__":
     num_lines = len(PAYLINES)  # 付線數
 

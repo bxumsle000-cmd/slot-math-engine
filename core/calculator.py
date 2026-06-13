@@ -327,6 +327,7 @@ def print_rtp_report(result: RTPResult) -> None:  # 印出多線 RTP 報告
     print("=" * 60)
 
 
+# 啟動方式：PYTHONPATH=. .venv/bin/python core/calculator.py
 if __name__ == "__main__":
     result = calculate_rtp()
     print_rtp_report(result)

@@ -194,6 +194,7 @@ def analyze_freespin_convergence(  # 記錄多線含 Free Spin 的 RTP 收斂曲
     return series
 
 
+# 啟動方式：PYTHONPATH=. .venv/bin/python simulator/markov_sim.py
 if __name__ == "__main__":
     from core.config import DEFAULT_FS_CONFIG
     config = DEFAULT_FS_CONFIG

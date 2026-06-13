@@ -118,5 +118,6 @@ PAYLINE_NAMES: list[str] = [
 ]  # 付線顯示名稱，與 PAYLINES 索引一一對應
 
 
+# 啟動方式：PYTHONPATH=. .venv/bin/python core/reel.py
 if __name__ == "__main__":
     None

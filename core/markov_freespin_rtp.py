@@ -111,6 +111,7 @@ def calculate_freespin_rtp(  # 計算多線含 Free Spin 的整體理論 RTP
     )
 
 
+# 啟動方式：PYTHONPATH=. .venv/bin/python core/markov_freespin_rtp.py
 if __name__ == "__main__":
     from core.markov import print_markov_report
     from core.config import DEFAULT_FS_CONFIG
