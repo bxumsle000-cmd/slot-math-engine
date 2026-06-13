@@ -445,21 +445,50 @@ with tab1:
         st.plotly_chart(fig_ml_sens, use_container_width=True)
 
         st.subheader("各賠率 RTP 貢獻分佈（每線）")
-        st.caption("以基礎捲軸（不含 FS 加成）為準，顯示各賠率對每線 RTP 的佔比")
+        st.caption("以基礎捲軸（不含 FS 加成）為準，長條為各賠率對每線 RTP 的貢獻（由大到小），折線為累積占比")
         _ml_rtp_base = cached_ml_rtp(_applied)  # 已套用捲軸的 RTP，不含 FS 乘數，用於取得組合明細
-        _ml_pie_data: dict[str, float] = {}
+        _ml_pareto_data: dict[str, float] = {}
         for _c in _ml_rtp_base.combo_breakdown:
             _key = f"{_c.multiplier}x"
-            _ml_pie_data[_key] = _ml_pie_data.get(_key, 0) + _c.rtp_contribution
+            _ml_pareto_data[_key] = _ml_pareto_data.get(_key, 0) + _c.rtp_contribution
 
-        df_ml_pie = pd.DataFrame({"賠率": list(_ml_pie_data.keys()), "RTP 貢獻": list(_ml_pie_data.values())})
-        fig_ml_pie = px.pie(
-            df_ml_pie,
-            names="賠率",
-            values="RTP 貢獻",
-            title=f"各賠率 RTP 貢獻（每線基礎合計 {_ml_rtp_base.rtp_per_line * 100:.4f}%）",
+        # 依 RTP 貢獻由大到小排序，計算累積占比（Pareto：凸顯少數賠率主導整體 RTP）
+        df_ml_pareto = (
+            pd.DataFrame({"賠率": list(_ml_pareto_data.keys()), "RTP 貢獻": list(_ml_pareto_data.values())})
+            .sort_values("RTP 貢獻", ascending=False)
+            .reset_index(drop=True)
         )
-        st.plotly_chart(fig_ml_pie, use_container_width=True)
+        _total_contrib = df_ml_pareto["RTP 貢獻"].sum()                                  # 全部賠率貢獻總和（≈ 每線 RTP）
+        df_ml_pareto["貢獻 (pp)"] = df_ml_pareto["RTP 貢獻"] * 100                        # 各賠率對每線 RTP 的貢獻（百分點）
+        df_ml_pareto["累積占比 (%)"] = df_ml_pareto["RTP 貢獻"].cumsum() / _total_contrib * 100  # 累積占整體 RTP 比例
+
+        fig_ml_pareto = go.Figure()
+        fig_ml_pareto.add_bar(                                  # 長條：各賠率 RTP 貢獻（左軸，百分點）
+            x=df_ml_pareto["賠率"],
+            y=df_ml_pareto["貢獻 (pp)"],
+            name="RTP 貢獻（pp）",
+            marker_color="#2196f3",
+        )
+        fig_ml_pareto.add_scatter(                             # 折線：累積占比（右軸，%）
+            x=df_ml_pareto["賠率"],
+            y=df_ml_pareto["累積占比 (%)"],
+            name="累積占比 (%)",
+            mode="lines+markers",
+            marker_color="#ff7f0e",
+            yaxis="y2",
+        )
+        fig_ml_pareto.add_hline(                               # 80% 參考線：標示主導 RTP 的賠率邊界（80/20 法則）
+            y=80, line_dash="dash", line_color="gray",
+            annotation_text="80%", yref="y2",
+        )
+        fig_ml_pareto.update_layout(
+            title=f"各賠率 RTP 貢獻 Pareto（每線基礎合計 {_ml_rtp_base.rtp_per_line * 100:.4f}%）",
+            xaxis={"title": "賠率", "categoryorder": "array", "categoryarray": list(df_ml_pareto["賠率"])},
+            yaxis={"title": "RTP 貢獻（百分點）"},
+            yaxis2={"title": "累積占比 (%)", "overlaying": "y", "side": "right", "range": [0, 105]},
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
+        )
+        st.plotly_chart(fig_ml_pareto, use_container_width=True)
 
     st.divider()
 
