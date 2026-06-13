@@ -72,7 +72,7 @@ def analyze_volatility(  # 計算多線波動性統計
     if seed is not None:
         random.seed(seed)
 
-    strips = reel_strips or REEL_STRIPS  # 使用自訂或預設捲軸帶
+    strips = reel_strips or REEL_STRIPS  
     # 收集每局的 total_multiplier（所有付線倍率之和）
     payouts = np.array([spin(reel_strips=strips).total_multiplier for _ in range(num_games)])
 

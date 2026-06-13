@@ -74,7 +74,7 @@ def spin(  # 模擬一局多線旋轉，回傳完整結果
     Returns:
         SpinOutcome，含停格位置、3×5 方格、各付線賠付、總賠付倍率
     """
-    reel_strips = reel_strips or REEL_STRIPS  # 顯式傳入 None 時兜底為預設捲軸帶（session_ml 會直接傳入 None）
+    reel_strips = reel_strips or REEL_STRIPS  
     num_reels = len(reel_strips)  # 捲軸數(5)
 
     # 對每條捲軸等機率抽一個停格位置（0 到 total_stops-1）
@@ -91,7 +91,6 @@ def spin(  # 模擬一局多線旋轉，回傳完整結果
 
     payline_multipliers: list[int] = []
     for payline in paylines:
-        # windows[col] = 第 col 條捲軸的 3 行；payline[col] = 此付線在該軸取哪行（0=上/1=中/2=下）
         line_symbols = tuple(windows[col][payline[col]] for col in range(num_reels))
         payline_multipliers.append(_evaluate_payline(line_symbols, paytable))
 
