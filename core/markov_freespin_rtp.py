@@ -5,8 +5,6 @@ markov_freespin_rtp.py - 多線 Free Spin 馬可夫鏈模型
 馬可夫鏈的轉移矩陣與穩態解析公式完全沿用 core/markov.py；
 唯一差異是 base_rtp 改從 core/calculator.py 取得（每線標準化 RTP）。
 
-這正是模組化設計的價值：狀態機數學與底層 spin 函式彼此解耦，
-替換 base_rtp 來源就能讓 Free Spin 模型支援任意遊戲架構。
 """
 
 from math import comb
@@ -29,12 +27,6 @@ def scatter_trigger_prob(reel_strips: list[ReelStrip], min_scatter: int = FS_MIN
     遍歷捲軸 0 的所有停格，算出每個停格是否在視窗中出現 Scatter，
     再用二項分佈計算「5 軸中至少 min_scatter 軸同時觸發」的機率。
 
-    ⚠ 假設「所有捲軸帶相同」：只取 reel_strips[0] 算單軸機率 p_single，
-      再以二項分佈（每軸同機率）推估。本專案的捲軸一律為 [同一 strip] × 5，故此假設成立。
-      若未來改成異質捲軸（各軸 Scatter 分佈不同），此函式會失準——
-      需改用 Poisson-binomial（逐軸不同 p）才正確。
-      （註：core/calculator.py 的 RTP 計算已支援異質捲軸，兩者通用性不對稱，異動捲軸設計時請留意。）
-
     Args:
         reel_strips: 捲軸帶列表（假設所有捲軸帶相同，僅取第一條代表計算）
         min_scatter: 觸發所需最少捲軸數，預設 3
@@ -50,8 +42,8 @@ def scatter_trigger_prob(reel_strips: list[ReelStrip], min_scatter: int = FS_MIN
         1 for stop in range(reel.total_stops)
         if "Scatter" in reel.window(stop)
     )
-    p_single = scatter_stop_count / reel.total_stops  # P(單軸視窗出現 Scatter)
-    p_fail   = 1 - p_single                           # P(單軸視窗不出現 Scatter)
+    p_single = scatter_stop_count / reel.total_stops  # (單軸視窗出現 Scatter)
+    p_fail   = 1 - p_single                           # (單軸視窗不出現 Scatter)
 
     # 二項分佈累積：至少 min_scatter 軸同時出現 Scatter 的機率
     trigger_prob = 0.0
@@ -88,17 +80,17 @@ def calculate_freespin_rtp(  # 計算多線含 Free Spin 的整體理論 RTP
         MarkovResult，欄位定義與單線版本相同（可直接交給 dashboard 顯示），
         其 trigger_prob／retrigger_prob 為本函式由捲軸衍生的實際生效值
     """
-    reel_strips = reel_strips or REEL_STRIPS  # 顯式傳入 None 時兜底為預設捲軸帶（scatter_trigger_prob 與 calculate_rtp 都需要）
+    reel_strips = reel_strips or REEL_STRIPS 
     base_rtp = calculate_rtp(reel_strips=reel_strips).rtp_per_line  # 每線標準化 RTP
 
     # 觸發機率由捲軸帶 Scatter 分佈衍生；重置觸發機率 = 同一個觸發機率
     # （FS 與一般局共用捲軸、條件相同），兩者以參數傳入馬可夫函式，非 config 欄位
-    derived_trigger_prob = scatter_trigger_prob(reel_strips)  # 衍生觸發機率 p（= 重置觸發機率 r）
+    trigger_prob = scatter_trigger_prob(reel_strips)  # 衍生觸發機率 p（= 重置觸發機率 r）
 
-    T = build_transition_matrix(config, derived_trigger_prob)          # (N+1)×(N+1) 吸收轉移矩陣（狀態 i=剩餘局數）
-    expected_fs = expected_fs_spins(config, derived_trigger_prob)      # 精確平均 FS 局數 E[FS]（吸收鏈）
+    T = build_transition_matrix(config, trigger_prob)          # (N+1)×(N+1) 吸收轉移矩陣（狀態 i=剩餘局數）
+    expected_fs = expected_fs_spins(config, trigger_prob)      # 精確平均 FS 局數 E[FS]（吸收鏈）
 
-    fs_per_base = derived_trigger_prob * expected_fs     # p·E[FS] = FS局數 / 一般局數 的長期比例
+    fs_per_base = trigger_prob * expected_fs             # 一般局進入FS的機率*進入後的平均局數，等於每次spin一局時，實際平均局數為 1 + fs_per_base
     pi_normal = 1 / (1 + fs_per_base)                    # 一般模式時間比例（更新-回報）
     pi_free = 1 - pi_normal                              # Free Spin 模式時間比例（互補）
 
@@ -113,8 +105,8 @@ def calculate_freespin_rtp(  # 計算多線含 Free Spin 的整體理論 RTP
         base_rtp=base_rtp,
         total_rtp=total_rtp,
         freespin_contribution=freespin_contribution,
-        trigger_prob=derived_trigger_prob,    # 實際生效的觸發機率（衍生值）
-        retrigger_prob=derived_trigger_prob,  # 實際生效的重置觸發機率（= 觸發機率）
+        trigger_prob=trigger_prob,    # 實際生效的觸發機率（衍生值）
+        retrigger_prob=trigger_prob,  # 實際生效的重置觸發機率（= 觸發機率）
         expected_fs_spins=expected_fs,        # 一次觸發平均 FS 局數 E[FS]
     )
 
