@@ -139,3 +139,30 @@ def expected_fs_spins(  # 求平均 FS 局數 E[FS]
     for _ in range(n_free_spins):             # 從 E_0 往外疊 N 層 → E_1, E_2, …, E_N
         efs = (efs + 1.0) / q                 # E_k=(E_{k-1}+1)/q
     return float(efs)                         # 疊滿 N 層即 E_N = E[FS]
+
+
+def print_markov_report(result: "MarkovResult") -> None:  # 列印馬可夫鏈 Free Spin RTP 分析報告
+    """
+    把 MarkovResult 的分析結果以易讀的文字報表印到終端機。
+
+    Args:
+        result: calculate_freespin_rtp() 回傳的馬可夫鏈彙總結果
+    """
+    cfg = result.config  # 此次分析使用的 Free Spin 參數設定（N、M）
+
+    print("=" * 60)
+    print("  多線含 Free Spin 整體 RTP 報告（馬可夫鏈）")
+    print("=" * 60)
+    print(f"  每次觸發給局數 N     ：{cfg.free_spin_count} 局")              # N：單次觸發的免費局數
+    print(f"  FS 賠付倍率 M        ：{cfg.win_multiplier:.2f}x")            # M：Free Spin 期間贏分倍率
+    print(f"  觸發機率 p           ：{result.trigger_prob * 100:.4f}%")     # p：一般局每局觸發 FS 的機率
+    print(f"  重置觸發機率 r       ：{result.retrigger_prob * 100:.4f}%")   # r：FS 期間每局重置回滿格的機率
+    print(f"  平均 FS 局數 E[FS]   ：{result.expected_fs_spins:.4f} 局")    # 一次觸發平均玩幾局 FS
+    print("-" * 60)
+    print(f"  一般模式時間比例 π₀  ：{result.pi_normal * 100:.4f}%")        # 長期處於一般模式的穩態比例
+    print(f"  Free Spin 時間比例 π₁：{result.pi_free * 100:.4f}%")         # 長期處於 Free Spin 的穩態比例
+    print("-" * 60)
+    print(f"  基礎付線 RTP         ：{result.base_rtp * 100:.4f}%")         # 不含 FS 的每線理論 RTP
+    print(f"  Free Spin 貢獻       ：+{result.freespin_contribution * 100:.4f}%")  # FS 單獨貢獻的 RTP 增量
+    print(f"  整體 RTP             ：{result.total_rtp * 100:.4f}%")        # 含 FS 的整體理論 RTP
+    print("=" * 60)

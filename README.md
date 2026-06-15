@@ -3,6 +3,12 @@
 > 一個從**數學理論**到**可玩前端**的完整 5×3 多線老虎機專案：
 > 理論 RTP 精確計算 → 蒙地卡羅模擬驗證 → FastAPI + MySQL 全端 → 原生前端遊戲。
 
+### 🔗 線上 Demo（已部署於 Railway）
+
+**https://web-production-26e50.up.railway.app/**
+
+用 Google 帳號登入即可遊玩，首次登入自動建立帳號並贈送 1000 金幣。
+
 <!-- ─────────────────────────────────────────────────────────────
      ⬇⬇⬇ 請在這裡放 1~2 張 GIF / 截圖（最重要，先抓住看的人）⬇⬇⬇
      建議：
@@ -21,7 +27,7 @@
 |------|----------|
 | **Python** | 全程型別標註、PEP 8、dataclass、generator、NumPy 向量化計算 |
 | **資料庫** | MySQL + SQLAlchemy ORM、交易管理、分頁查詢、稽核日誌、`Decimal` 金額精度 |
-| **軟體工程** | 五層解耦架構、單一資料來源（改一處全自動連動）、47 個自動化測試 |
+| **軟體工程** | 五層解耦架構、單一資料來源（改一處全自動連動）、46 個自動化測試 |
 | **全端開發** | FastAPI（Google 登入 + JWT 認證）+ 原生 HTML/CSS/JS 前端，前後端同 port、無 CORS |
 | **數學建模** | 理論 RTP 精確解（外積向量化）、馬可夫鏈 Free Spin 模型、蒙地卡羅驗證 |
 
@@ -41,7 +47,7 @@
 
 ```
 觸發機率        0.38%（由捲軸自動推導）
-整體 RTP        98.15%   （Free Spin 貢獻 +10.29%）
+整體 RTP        97.97%   （Free Spin 貢獻 +10.11%）
 ```
 
 ### 3. 蒙地卡羅模擬獨立驗證理論值
@@ -106,13 +112,24 @@ PYTHONPATH=. .venv/bin/uvicorn game_api.main:app --reload
 PYTHONPATH=. .venv/bin/streamlit run dashboard/app.py
 ```
 
+### 部署（Railway）
+
+專案內含 `Procfile`，可直接部署到 Railway：
+
+```
+web: uvicorn game_api.main:app --host 0.0.0.0 --port $PORT
+```
+
+線上版本：**https://web-production-26e50.up.railway.app/**
+（環境變數 DB_* / JWT_SECRET / GOOGLE_CLIENT_ID 在 Railway 後台設定；Google OAuth 的 Authorized JavaScript origins 需加入該網域）
+
 ### 直接看數學引擎（不需資料庫）
 
 ```bash
 # 理論 RTP 精確計算報告
 PYTHONPATH=. .venv/bin/python core/calculator.py
 
-# 含 Free Spin 的馬可夫鏈分析
+# 含 Free Spin 的整體 RTP（馬可夫鏈）
 PYTHONPATH=. .venv/bin/python core/markov_freespin_rtp.py
 
 # 百萬局蒙地卡羅模擬（與理論值對比）
@@ -127,7 +144,7 @@ PYTHONPATH=. .venv/bin/python simulator/engine.py
 PYTHONPATH=. .venv/bin/pytest tests/ -v
 ```
 
-- `tests/test_core.py`（37 項）：賠付規則、Wild 替換、RTP 計算、馬可夫鏈穩態
+- `tests/test_core.py`（36 項）：賠付規則、Wild 替換、RTP 計算、馬可夫鏈穩態
 - `tests/test_api_spin.py`（10 項）：`/spin` 端點、Free Spin 狀態流轉、**防作弊鎖押注**、餘額不足處理（SQLite in-memory，不依賴真實資料庫）
 
 ---
