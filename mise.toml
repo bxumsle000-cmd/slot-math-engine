@@ -1,5 +1,0 @@
-# Railway / Railpack 用 mise 安裝 Python。mise 2026.6+ 預設會驗證下載檔的
-# GitHub artifact attestations，但較舊的 python-build-standalone（如 3.12.3，2024-04）
-# 沒有 attestations，會導致安裝失敗。此處關閉驗證以沿用既有穩定版本。
-[settings]
-python.github_attestations = false
