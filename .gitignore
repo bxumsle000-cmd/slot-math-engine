@@ -11,9 +11,6 @@ __pycache__/
 .vscode/
 .claude/
 
-# ── 執行產出 ─────────────────────────────────────────────
-data/results/
-
 # ── 文件：除根目錄 README.md 外，其餘 .md 一律不公開 ──────
 *.md
 !/README.md
