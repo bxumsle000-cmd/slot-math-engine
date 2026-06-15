@@ -148,8 +148,13 @@ def do_spin(  # 旋轉一局：判斷模式 → 旋轉 → 結算 → 寫入 DB
         player.fs_locked_bet = effective_bet  # 鎖定觸發 FS 時的押注金額，FS 期間無法更改
         awarded_new_fs = True  # 一般局首次觸發
 
+
     player.balance = balance_after  # 寫回 ORM（Decimal，保留精度）
 
+    # SQL: INSERT INTO spin_histories
+    #        (player_id, bet_amount, stops, payline_multipliers, total_multiplier,
+    #         scatter_count, is_free_spin, payout, balance_before, balance_after)
+    #      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s); 
     history = SpinHistory(
         player_id=player.id,
         bet_amount=float(effective_bet),  # 記錄實際押注（FS 局 = 鎖定值）
@@ -164,6 +169,7 @@ def do_spin(  # 旋轉一局：判斷模式 → 旋轉 → 結算 → 寫入 DB
     )
     db.add(history)
     db.commit()
+    # SQL: SELECT * FROM spin_histories WHERE id = LAST_INSERT_ID();  -- 取回 DB 自動填入的 id 與 created_at
     db.refresh(history)  # 取回 DB 自動填入的 id 與 created_at
 
     return SpinResponse(

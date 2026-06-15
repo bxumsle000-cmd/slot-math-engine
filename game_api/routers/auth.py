@@ -6,7 +6,7 @@ routers/auth.py - 登入端點（Google 登入）
 
 身分一律來自 Google 登入（OpenID Connect）：前端拿到 Google 簽發的 id_token，
 後端驗證通過後，用 google_sub 找帳號（沒有就建一個），再簽發本站自己的 JWT。
-後續所有 API 仍靠本站 JWT 驗證（get_current_player），與登入方式解耦。
+後續所有 API 仍靠本站 JWT 驗證（get_current_player）。
 """
 
 from decimal import Decimal
@@ -53,9 +53,12 @@ def login_with_google(  # 驗證 Google id_token，回傳本站 JWT token
         # 不回傳細節，避免洩漏驗證邏輯；驗證失敗一律視為未授權
         raise HTTPException(status_code=401, detail="Google 登入失敗")
 
+    # SQL: SELECT * FROM players WHERE google_sub = %s LIMIT 1;
     player = db.query(Player).filter(Player.google_sub == identity.sub).first()  # 以 Google sub 認帳號
 
     if player is None:  # 第一次用這個 Google 帳號登入 → 自動建立玩家
+        # SQL: INSERT INTO players (google_sub, email, username, balance)
+        #      VALUES (%s, %s, %s, %s);  
         player = Player(
             google_sub=identity.sub,    # Google 帳號唯一識別碼，之後登入靠它認人
             email=identity.email,       # Google 驗證過的 email
@@ -66,9 +69,9 @@ def login_with_google(  # 驗證 Google id_token，回傳本站 JWT token
         try:
             db.commit()  # 正式寫入新玩家
         except IntegrityError:
-            # email 唯一鍵衝突（極罕見：同 email 但 sub 不同，理論上不該發生）→ 回滾並擋下
             db.rollback()
             raise HTTPException(status_code=409, detail="此 Google 帳號 email 已被使用")
+        # SQL: SELECT * FROM players WHERE id = LAST_INSERT_ID();  -- 取回 DB 自動產生的 id 與 created_at
         db.refresh(player)  # 取回 DB 自動產生的 id 與 created_at
 
     token = create_access_token(player_id=player.id, username=player.username)  # 產生含過期時間的本站 JWT

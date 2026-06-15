@@ -8,7 +8,7 @@ models.py - ORM 資料表定義
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from game_api.database import Base
@@ -20,7 +20,7 @@ class Player(Base):  # 玩家資料表，對應 DB 的 players 資料表
 
     每一列代表一個玩家，記錄 Google 帳號資訊與當前餘額。
     身分一律來自 Google 登入（OpenID Connect），不存密碼。
-    餘額使用 DECIMAL(12, 2) 避免浮點數精度問題（例如 100.00 不會變成 99.99999）。
+    餘額使用 DECIMAL(12, 2) 避免浮點數精度問題。
 
     Args:
         id:                   玩家唯一識別碼，自動遞增
@@ -33,6 +33,18 @@ class Player(Base):  # 玩家資料表，對應 DB 的 players 資料表
         created_at:           帳號建立時間，由資料庫自動填入
     """
 
+    # SQL: 下面這整段 ORM 欄位定義，等同手寫的 CREATE TABLE：
+    #   CREATE TABLE players (
+    #       id                   INT           NOT NULL AUTO_INCREMENT,
+    #       google_sub           VARCHAR(255)  NOT NULL UNIQUE,
+    #       email                VARCHAR(255)  NOT NULL UNIQUE,
+    #       username             VARCHAR(50)   NOT NULL,
+    #       balance              DECIMAL(12,2) NOT NULL DEFAULT 0,
+    #       free_spins_remaining INT           NOT NULL DEFAULT 0,
+    #       fs_locked_bet        DECIMAL(12,2) NOT NULL DEFAULT 0,
+    #       created_at           DATETIME      NOT NULL DEFAULT NOW(),
+    #       PRIMARY KEY (id)
+    #   );
     __tablename__ = "players"  # 對應 MySQL 中的資料表名稱
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)                       # 玩家唯一識別碼，自動遞增
@@ -40,7 +52,7 @@ class Player(Base):  # 玩家資料表，對應 DB 的 players 資料表
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)                # Google 帳號 email，不可重複
     username: Mapped[str] = mapped_column(String(50), nullable=False)                           # 顯示名稱（取自 Google name），可重複，僅供 UI 顯示
     balance: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)          # 錢包餘額，單位：元，精確到小數點後 2 位
-    free_spins_remaining: Mapped[int] = mapped_column(Integer, nullable=False, default=0)        # 剩餘 Free Spin 局數（0 = 一般模式）
+    free_spins_remaining: Mapped[int] = mapped_column(nullable=False, default=0)        # 剩餘 Free Spin 局數（0 = 一般模式）
     fs_locked_bet: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)   # FS 期間鎖定的押注金額（0 = 非 FS 狀態，防止 FS 中改押注作弊）
     created_at: Mapped[datetime] = mapped_column(                                              # 帳號建立時間，由資料庫自動填入
         DateTime, server_default=func.now(), nullable=False
@@ -73,6 +85,23 @@ class SpinHistory(Base):  # 旋轉記錄資料表，對應 DB 的 spin_histories
         created_at:          旋轉時間，由資料庫自動填入
     """
 
+    # SQL: 下面這整段 ORM 欄位定義，等同手寫的 CREATE TABLE：
+    #   CREATE TABLE spin_histories (
+    #       id                  INT           NOT NULL AUTO_INCREMENT,
+    #       player_id           INT           NOT NULL,
+    #       bet_amount          DECIMAL(12,2) NOT NULL,
+    #       stops               VARCHAR(20)   NOT NULL,
+    #       payline_multipliers VARCHAR(50)   NOT NULL,
+    #       total_multiplier    INT           NOT NULL,
+    #       scatter_count       INT           NOT NULL DEFAULT 0,
+    #       is_free_spin        BOOLEAN       NOT NULL DEFAULT FALSE,
+    #       payout              DECIMAL(12,2) NOT NULL,
+    #       balance_before      DECIMAL(12,2) NOT NULL,
+    #       balance_after       DECIMAL(12,2) NOT NULL,
+    #       created_at          DATETIME      NOT NULL DEFAULT NOW(),
+    #       PRIMARY KEY (id),
+    #       FOREIGN KEY (player_id) REFERENCES players(id)
+    #   );
     __tablename__ = "spin_histories"  # 對應 MySQL 中的資料表名稱
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)             # 旋轉記錄唯一識別碼
@@ -80,9 +109,9 @@ class SpinHistory(Base):  # 旋轉記錄資料表，對應 DB 的 spin_histories
     bet_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)         # 本局押注金額（元，押滿 5 線）
     stops: Mapped[str] = mapped_column(String(20), nullable=False)                     # 五捲軸停格位置，格式 "5|12|3|18|0"
     payline_multipliers: Mapped[str] = mapped_column(String(50), nullable=False)       # 各付線賠付倍率，格式 "0|5|0|..."
-    total_multiplier: Mapped[int] = mapped_column(Integer, nullable=False)             # 所有付線倍率總和（0 = 全未中獎）
-    scatter_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)         # 出現 Scatter 的捲軸數（0–5）
-    is_free_spin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)    # 是否為 Free Spin 局（True = 免費，不扣押注）
+    total_multiplier: Mapped[int] = mapped_column(nullable=False)             # 所有付線倍率總和（0 = 全未中獎）
+    scatter_count: Mapped[int] = mapped_column(nullable=False, default=0)         # 出現 Scatter 的捲軸數（0–5）
+    is_free_spin: Mapped[bool] = mapped_column(nullable=False, default=False)    # 是否為 Free Spin 局（True = 免費，不扣押注）
     payout: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)                 # 實際賠付金額
     balance_before: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)     # 旋轉前玩家餘額（稽核快照）
     balance_after: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)      # 旋轉後玩家餘額（稽核快照）
