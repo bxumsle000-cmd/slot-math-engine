@@ -72,9 +72,6 @@
 ```
 
 > 改 `core/reel.py` 的一個數字（符號格數、付線、賠付），模擬器、API、前端、儀表板**全部自動跟著更新**。
-
-完整架構、執行流程圖與數值調整指南見 **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)**。
-
 ---
 
 ## 技術棧
